@@ -55,20 +55,21 @@ class ZMQ_Output:
         if cfg['camera_annotate_metadata']:
             self.camera.annotate_text = dt.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f') + ' @ ' + elapsed_str
 
-        # Prepare output buffer
-        #
-        # Prefix with SUBSCRIBE topic and metadata, currently only frame index
-        idx = self.camera.frame.index.to_bytes(length=8, byteorder='little', signed=False)
-
-        # TODO: Use multi-part messages instead to avoid the copy?
-        # Doesn't seem to take very long though, fraction of a ms
-        buf_str = b'PYSPY' + idx + buf
+        frame_index = self.camera.frame.index
 
         # For testing purposes drop every n-th frame
         if self.cfg['debug_drop_nth_frame']:
-            if not idx % self.cfg['debug_drop_nth_frame']:
-                logging.debug('Intended frame drop at index {}'.format(idx))
+            if not frame_index % self.cfg['debug_drop_nth_frame']:
+                logging.debug('Intended frame drop at index {}'.format(frame_index))
                 return
+
+        # Prepare output buffer
+        #
+        # Prefix with SUBSCRIBE topic and metadata, currently only frame index
+        idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
+        # TODO: Use multi-part messages instead to avoid the copy?
+        # Doesn't seem to take very long though, fraction of a ms
+        buf_str = b'PYSPY' + idx + buf
 
         # Actually send the buffer to the zmq socket
         #

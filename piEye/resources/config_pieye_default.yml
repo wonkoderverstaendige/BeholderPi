@@ -26,5 +26,5 @@ zmq_output_port: 5555
 camera_stream_duplication: 4
 
 # Debug
-debug_drop_nth_frame: 1000
+debug_drop_nth_frame: 100
 
