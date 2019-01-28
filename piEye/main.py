@@ -62,7 +62,7 @@ class ZMQ_Output:
 
         # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
-        buf_str = b'PYSPY' + idx.tobytes() + buf
+        buf_str = b'PYSPY' + idx + buf
 
         # For testing purposes drop every n-th frame
         if self.cfg['debug_drop_nth_frame']:
