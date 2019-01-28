@@ -2,16 +2,9 @@
 piEye of the Beholder
 
 
-# piEye
-- raspberries with camera module, streaming via ZMQ
-
-# Beholder
-- Master, gathering streams, displaying and writing to disk
-
-
 # Outline
 
-- array of ~12 camera nodes covering a 4 m * 8 m space with small overlap in FOV
+- array of ~8 camera nodes covering a 5 m * 10 m space with small overlap in FOV
 
 - reliable recording for offline analysis, either
     a) local to the raspberry (USB drive, SD card)
@@ -41,14 +34,11 @@ We could grab the frame in raspivid and relay the x264 frame directly via e.g. Z
 	- ~250-300 Mbit ethernet
 	- 1 GByte RAM
 - [PiCamera v2.1](https://www.raspberrypi.org/documentation/hardware/camera/README.md)
-	- FOV: 62.2° horizontal, , 48.8° vertical, i.e. 2.5 m x 1.7 m at 210 cm distance
-
-**Read: ** [How the PiCamera works](https://picamera.readthedocs.io/en/release-1.13/fov.html)
-
+	- FOV: 62.2° horizontal, , 48.8° vertical
 - [PoE hat](https://www.raspberrypi.org/products/poe-hat/) for power/network
 
-- PoE capable switch (max. 10W / Raspberry), e.g. [Netgear GS116PP](https://www.netgear.com/support/product/GS116PP.aspx)
 
+**Read: ** [How the PiCamera works](https://picamera.readthedocs.io/en/release-1.13/fov.html)
 
 # Software
 
@@ -93,13 +83,23 @@ https://dantheiotman.com/2017/08/23/using-raspivid-for-low-latency-pi-zero-w-vid
 
 - change passord with `passwd`
 - connect to network with internet access
-- update/upgrade `sudo apt update && sudo apt upgrade
+- update/upgrade: `sudo apt update && sudo apt upgrade
+- Install general tools: `sudo apt install byobu htop vim git`
 - test camera with `raspivid -t 0`
-- edit `/etc/dhcpcd.conf` to set up static IP
+- edit `/etc/dhcpcd.conf` to set up static IP fallback for local network
 
 ## Picamera/Python
-- `sudo apt install byobu htop vim python3-pip python3-picamera python3-zmq`
+- `sudo apt install python3-pip python3-picamera python3-zmq`
 
+## Beholder/piEye module
+- `mkdir -p ~/src/ && cd ~/src`
+- `git clone https://github.com/MemDynLab/BeholderPi.git`
+
+## Telegraf
+
+# Ansible
+- playbooks for setup and updates/maintenance of the above
+  - SSH key distribution
 
 # TODO:
 - grab in YUV, drop UV, raw grayscale -> write to grayscale x264 directly. All buffersizes known, no decoding step.
