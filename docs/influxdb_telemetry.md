@@ -6,7 +6,7 @@
 	- `$ curl -sL https://repos.influxdata.com/influxdb.key | sudo apt-key add -`
 	- `$ echo "deb https://repos.influxdata.com/debian stretch stable" | sudo tee /etc/apt/sources.list.d/influxdb.list`
 	- `$ sudo apt update`
-	- `$ sudo apt install telegraf influxdb chronograf kapacitor`
+	- `$ sudo apt install telegraf`, install also `influxdb kapacitor` on main pi
 
 ## InfluxDB
 - `$ sudo systemctl start influxdb`, defaults to port 8086

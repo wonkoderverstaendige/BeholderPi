@@ -90,11 +90,12 @@ class Grabber(threading.Thread):
                     # Look at current and previous frame index, check for shenanigans
                     if None not in [idx, self.last_frame_idx]:
                         delta = idx - self.last_frame_idx
-                        if idx - self.last_frame_idx != 1:
-                            logging.warning('Frame skip? Delta={}, Previous: {}, Current: {}'.format(
-                                delta,
+                        if delta < 0:
+                            logging.warning('Frame source restart? prev: {}, curr: {}, delta: {}')
+                        elif delta > 1:
+                            logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
                                 self.last_frame_idx,
-                                idx))
+                                idx, delta - 1))
 
                     # Store current frame index
                     self.last_frame_idx = idx
