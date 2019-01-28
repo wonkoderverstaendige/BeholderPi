@@ -103,8 +103,8 @@ class Grabber(threading.Thread):
 
             # Socket receive timeout, display warning
             else:
-                logging.debug('TIMEOUT!')
-                # TODO: Fault Frames as JPG, so they can be handed over to the writer directly?
+                # logging.debug('TIMEOUT!')
+                # TODO: Fault frames as JPG, so they can be handed over to the writer directly?
                 self.frame = NO_SIGNAL_FRAME
 
             # If no valid frame was decoded even though we did receive something, show a warning

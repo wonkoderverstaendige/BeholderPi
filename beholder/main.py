@@ -4,7 +4,7 @@ import pkg_resources
 from time import time
 from datetime import datetime as dt
 import subprocess as sp
-import yaml
+
 import ctypes
 import logging
 import multiprocessing as mp
@@ -58,7 +58,6 @@ class Beholder:
             self.frame = buf_to_numpy(self._shared_arr, shape=self.arr_shape)
 
         self.disp_frame = np.zeros(self.frame.shape, dtype=np.uint8)
-        print(self.disp_frame.shape)
 
         # self.paused_frame = np.zeros_like(self.frame)
 
@@ -197,12 +196,12 @@ class Beholder:
 
 
 if __name__ == '__main__':
-    # Construct the shared array to fit all frames
-    cfg_path = pkg_resources.resource_filename(__name__, 'resources/default_config.yml')
-
+    # Load configuration
+    cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
     with open(cfg_path, 'r') as cfg_f:
         cfg = yaml.load(cfg_f)
 
+    # Construct the shared array to fit all frames
     num_bytes = cfg['frame_width'] * (cfg['frame_height'] + FRAME_METADATA_H) * cfg['frame_colors'] * len(
         cfg['sources'])
 
