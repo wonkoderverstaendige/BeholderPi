@@ -1,8 +1,10 @@
 # import io
+import os
 import logging
 import pkg_resources
 import socket
 import yaml
+import threading
 
 from random import randint
 from time import sleep, time, clock
@@ -16,6 +18,7 @@ NUM_STREAMS = 4
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
 
+threading.current_thread().name = socket.gethostname()
 
 def get_local_ip():
     local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [
