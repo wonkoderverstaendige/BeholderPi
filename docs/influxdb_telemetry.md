@@ -35,4 +35,5 @@ modify the telegraf service, or link the default location to our version.
 
 - create symlink from `/etc/telegraf/telegraf.conf` to repo conf file
 - Add password and username environment variables to `/etc/default/telegraf`
+- Add telegraf user to video group: `sudo usermod -G video telegraf` to access the videocore temperature sensor
 - `$ sudo systemctl start telegraf`

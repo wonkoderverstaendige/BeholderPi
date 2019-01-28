@@ -67,6 +67,7 @@ class ZMQ_Output:
         # For testing purposes drop every n-th frame
         if self.cfg['debug_drop_nth_frame']:
             if not idx % self.cfg['debug_drop_nth_frame']:
+                logging.debug('Intended frame drop at index {}'.format(idx))
                 return
 
         # Actually send the buffer to the zmq socket
