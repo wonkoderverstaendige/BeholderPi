@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from math import ceil
+import math
 import pkg_resources
 from time import time
-from datetime import datetime as dt
 import subprocess as sp
+from datetime import datetime as dt
 
 import ctypes
 import logging
@@ -11,6 +11,7 @@ import multiprocessing as mp
 from queue import Queue
 from collections import deque
 import threading
+import yaml
 
 from halo import Halo
 import numpy as np

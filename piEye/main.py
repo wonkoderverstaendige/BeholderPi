@@ -4,6 +4,7 @@ import pkg_resources
 import socket
 import yaml
 
+from random import randint
 from time import sleep, time, clock
 from datetime import datetime as dt
 
@@ -28,6 +29,7 @@ class ZMQ_Output:
 
     def __init__(self, cfg, camera, context):
         self.camera = camera
+        self.cfg = cfg
 
         # ZMQ setup
         self.zmq_sockets = []
@@ -56,15 +58,16 @@ class ZMQ_Output:
         # Prepare output buffer
         #
         # Prefix with SUBSCRIBE topic and metadata, currently only frame index
-        idx = np.array(self.camera.frame.index, dtype='uint64')
-        # TODO: Verify that this is giving the same result, then we can drop numpy import
-        idx_alt = self.camera.frame.index.to_bytes(length=8, byteorder='little', signed=False)
-        if not idx.tobytes() == idx_alt:
-            print('Unequal: ', idx.tobytes(), idx_alt)
+        idx = self.camera.frame.index.to_bytes(length=8, byteorder='little', signed=False)
 
         # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
         buf_str = b'PYSPY' + idx.tobytes() + buf
+
+        # For testing purposes drop every n-th frame
+        if self.cfg['debug_drop_nth_frame']:
+            if not idx % self.cfg['debug_drop_nth_frame']:
+                return
 
         # Actually send the buffer to the zmq socket
         #
