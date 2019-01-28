@@ -52,7 +52,8 @@ class Grabber(threading.Thread):
             self._shared_arr = arr
             logging.debug('{} shared array: {}'.format(self.name, arr))
             # self._fresh_frame = buf_to_numpy(arr, shape=shape, offset=self.id * num_bytes, count=num_bytes)
-            self._fresh_frame = buf_to_numpy(arr, shape=(self.height*self.cfg['n_rows'], self.width*self.cfg['n_cols'], 3))
+            self._fresh_frame = buf_to_numpy(arr, shape=(
+            self.height * self.cfg['n_rows'], self.width * self.cfg['n_cols'], 3))
             logging.debug('Numpy shared buffer at {}'.format(hex(self._fresh_frame.ctypes.data)))
 
         self._write_queue = out_queue
@@ -90,7 +91,10 @@ class Grabber(threading.Thread):
                     if None not in [idx, self.last_frame_idx]:
                         delta = idx - self.last_frame_idx
                         if idx - self.last_frame_idx != 1:
-                            logging.warning('Frame skipped? Delta={}'.format(delta))
+                            logging.warning('Frame skip? Delta={}, Previous: {}, Current: {}'.format(
+                                delta,
+                                self.last_frame_idx,
+                                idx))
 
                     # Store current frame index
                     self.last_frame_idx = idx
@@ -146,7 +150,6 @@ class Grabber(threading.Thread):
         """Forward acquired image to entities downstream via queues or shared array.
         """
 
-
         # # FPS display
         # if len(self._t_loop):
         #     fps_str = 'G={:.1f}fps'.format(1000 / (sum(self._t_loop) / len(self._t_loop)))
@@ -160,7 +163,7 @@ class Grabber(threading.Thread):
         try:
             # with self._shared_arr.get_lock():
             self._fresh_frame[self.height * self.n_row:self.height * (self.n_row + 1),
-                              self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame # np.rot90(self.frame)
+            self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame  # np.rot90(self.frame)
         except ValueError:
             logging.debug(('VE', self.n_col, self.n_row, self._fresh_frame.shape))
             # logging.info('test')
