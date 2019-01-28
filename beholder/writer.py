@@ -16,7 +16,7 @@ class Writer(threading.Thread):
         self.id = idx
         self.cfg = cfg
 
-        self.name = 'Writer ' + str(self.id)
+        self.name = 'Writer #{:02d}'.format(self.id)
         self.writer_pipe = None
         self.logger = None
 
@@ -32,15 +32,9 @@ class Writer(threading.Thread):
         self._ev_trial_active = ev_trial_active
 
         self.recording = False
-
-        # self.video_fname = Path.home() / "Videos/hextrack/{}_cam_{}"
-        # self.video_fname = str(self.video_fname.as_posix())
-
         logging.debug('Writer initialization done!')
 
     def start_recording(self):
-        # ts_launch = dt.utcnow().strftime('%Y%m%dT%H%M%S')
-
         # Video output object
         logging.debug('Starting Recording')
 

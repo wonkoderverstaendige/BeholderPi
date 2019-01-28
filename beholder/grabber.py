@@ -25,7 +25,7 @@ class Grabber(threading.Thread):
         self.cfg = cfg
         self.target = 'tcp://{}'.format(target)
 
-        self.name = 'Grabber ' + str(self.id)
+        self.name = 'Grabber #{:02d}'.format(self.id)
         logging.info('Initializing ...')
 
         # Set up source socket
