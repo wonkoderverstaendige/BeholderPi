@@ -33,6 +33,8 @@ class Grabber(threading.Thread):
         self.socket = None
         self.poller = zmq.Poller()
 
+        self.timed_out = False
+
         self.n_frames = 0
         self.frame = None
         self.last_frame_idx = None
@@ -44,8 +46,8 @@ class Grabber(threading.Thread):
         self.n_row = self.id // cfg['n_cols']
         self.n_col = self.id % cfg['n_cols']
 
-        shape = (self.height + FRAME_METADATA_H, self.width, self.colors)
-        num_bytes = int(np.prod(shape))
+        # shape = (self.height + FRAME_METADATA_H, self.width, self.colors)
+        # num_bytes = int(np.prod(shape))
 
         # Attach to shared buffer
         with arr.get_lock():
@@ -53,7 +55,7 @@ class Grabber(threading.Thread):
             logging.debug('{} shared array: {}'.format(self.name, arr))
             # self._fresh_frame = buf_to_numpy(arr, shape=shape, offset=self.id * num_bytes, count=num_bytes)
             self._fresh_frame = buf_to_numpy(arr, shape=(
-            self.height * self.cfg['n_rows'], self.width * self.cfg['n_cols'], 3))
+                self.height * self.cfg['n_rows'], self.width * self.cfg['n_cols'], 3))
             logging.debug('Numpy shared buffer at {}'.format(hex(self._fresh_frame.ctypes.data)))
 
         self._write_queue = out_queue
@@ -81,7 +83,19 @@ class Grabber(threading.Thread):
             # Poll socket for incoming messages, timeout when nothing comes in
             messages = self.poller.poll(SOCKET_RECV_TIMEOUT)
 
-            if len(messages):
+            if not len(messages):
+                # Socket receive timeout, display warning
+                if not self.timed_out:
+                    self.timed_out = True
+                    logging.info('Frame source timeout!')
+                # TODO: Fault frames as JPG, so they can be handed over to the writer directly?
+                self.frame = NO_SIGNAL_FRAME
+
+            else:
+                # Source reconnected
+                if self.timed_out:
+                    self.timed_out = False
+                    logging.info('Frame source connected')
                 for socket, N in messages:
                     encoded_frame = socket.recv()
                     self.frame = cv2.imdecode(np.fromstring(encoded_frame[13:], dtype='uint8'), cv2.IMREAD_UNCHANGED)
@@ -91,9 +105,9 @@ class Grabber(threading.Thread):
                     if None not in [idx, self.last_frame_idx]:
                         delta = idx - self.last_frame_idx
                         if delta < 0:
-                            logging.warning('Frame source restart? prev: {}, curr: {}, delta: {}').format(
+                            logging.warning('Frame source restart? prev: {}, curr: {}, delta: {}'.format(
                                 self.last_frame_idx,
-                                idx, delta - 1)
+                                idx, delta - 1))
                         elif delta > 1:
                             logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
                                 self.last_frame_idx,
@@ -107,12 +121,6 @@ class Grabber(threading.Thread):
                             self._write_queue.put(encoded_frame[13:], timeout=.5)
                         except Full:
                             logging.warning('Dropped frame {}'.format(self.last_frame_idx))
-
-            # Socket receive timeout, display warning
-            else:
-                # logging.debug('TIMEOUT!')
-                # TODO: Fault frames as JPG, so they can be handed over to the writer directly?
-                self.frame = NO_SIGNAL_FRAME
 
             # If no valid frame was decoded even though we did receive something, show a warning
             if self.frame is None:
