@@ -91,7 +91,9 @@ class Grabber(threading.Thread):
                     if None not in [idx, self.last_frame_idx]:
                         delta = idx - self.last_frame_idx
                         if delta < 0:
-                            logging.warning('Frame source restart? prev: {}, curr: {}, delta: {}')
+                            logging.warning('Frame source restart? prev: {}, curr: {}, delta: {}').format(
+                                self.last_frame_idx,
+                                idx, delta - 1)
                         elif delta > 1:
                             logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
                                 self.last_frame_idx,
