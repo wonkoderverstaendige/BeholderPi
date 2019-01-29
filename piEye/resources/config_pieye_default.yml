@@ -3,7 +3,7 @@ camera_sensor_mode: 4
 camera_rotation: 90
 camera_vflip: false
 camera_hflip: false
-camera_framerate: 20.
+camera_framerate: 30.
 camera_exposure_mode: 'sports'
 
 # Frame resize. Note that frame dimensions must take rotation into account
