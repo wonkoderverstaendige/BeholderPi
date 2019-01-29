@@ -3,7 +3,6 @@ import time
 import logging
 import threading
 from queue import Empty
-from pathlib import Path
 
 import subprocess as sp
 
@@ -39,7 +38,7 @@ class Writer(threading.Thread):
         logging.debug('Starting Recording')
 
         ts_launch = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
-        cmd = FFMPEG_COMMAND + ['img/{}_piEye{:02d}.mp4'.format(self.id, ts_launch)]
+        cmd = FFMPEG_COMMAND + ['img/{}_piEye{:02d}.mp4'.format(ts_launch, self.id)]
         self.writer_pipe = sp.Popen(cmd, stdin=sp.PIPE)
 
         # # Frame metadata logger output
