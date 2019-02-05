@@ -23,8 +23,12 @@
 # Change these
 root_password_clear="correct horse battery staple"
 pi_password_clear="wrong cart charger paperclip"
-image_to_download="https://downloads.raspberrypi.org/raspbian_latest"
-checksum="$(wget --quiet https://www.raspberrypi.org/downloads/raspbian/ -O - | egrep -m 1 'SHA-1' | awk -F '<|>' '{print $9}')"
+image_to_download="https://downloads.raspberrypi.org/raspbian_lite_latest"
+
+# Get SHA-256 for the lite image
+# Lite is currently the third item on the download page
+checksum="$(wget --quiet https://www.raspberrypi.org/downloads/raspbian/ -O - | egrep -m 3 'SHA-256' | awk -F '<|>' '{i++}i==3{print $9}')"
+
 sdcard_mount="/mnt/sdcard"
 public_key_file="id_ed25519.pub"
 
@@ -37,11 +41,11 @@ then
 fi
 
 # Download the latest image, using the  --continue "Continue getting a partially-downloaded file"
-wget --continue ${image_to_download} -O raspbian_image.zip
+wget --continue ${image_to_download} -O raspbian_lite_image.zip
 
-echo "Checking the SHA-1 of the downloaded image matches \"${checksum}\""
+echo "Checking the SHA-256 of the downloaded image matches \"${checksum}\""
 
-if [ $( sha1sum raspbian_image.zip | grep ${checksum} | wc -l ) -eq "1" ]
+if [ $( sha256sum raspbian_lite_image.zip | grep ${checksum} | wc -l ) -eq "1" ]
 then
     echo "The checksums matche"
 else
@@ -53,10 +57,10 @@ fi
 mkdir ${sdcard_mount}
 
 # unzip
-extracted_image=$( 7z l raspbian_image.zip | awk '/-raspbian-/ {print $NF}' )
+extracted_image=$( 7z l raspbian_lite_image.zip | awk '/-raspbian-/ {print $NF}' )
 echo "The name of the image is \"${extracted_image}\""
 
-7z x raspbian_image.zip
+7z x raspbian_lite_image.zip
 
 if [ ! -e ${extracted_image} ]
 then
