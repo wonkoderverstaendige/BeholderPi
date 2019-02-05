@@ -109,9 +109,12 @@ class Grabber(threading.Thread):
                                 self.last_frame_idx,
                                 idx, delta - 1))
                         elif delta > 1:
-                            logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
-                                self.last_frame_idx,
-                                idx, delta - 1))
+                            if delta == 2 and not (self.last_frame_idx + 1) % 10000:
+                                logging.debug('Intentional frame skip')
+                            else:
+                                logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
+                                    self.last_frame_idx,
+                                    idx, delta - 1))
 
                     # Store current frame index
                     self.last_frame_idx = idx
