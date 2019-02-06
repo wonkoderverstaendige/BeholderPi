@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
+"""Send IP and hostname information. As a broadcast message via UDP, or TCP to a known host IP."""
 import socket
 import time
+import sys
+
+if len(sys.argv) > 1:
+    HOST = sys.argv[1]
+else:
+    HOST = '131.174.140.26'
+
 
 PORT = 18000
-HOST = '131.174.140.255'
 
 RECONNECT_WAIT = 3
 SEND_INTERVAL = 3
@@ -25,7 +32,7 @@ def my_hostname():
 def serve_tcp():
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            print('Connecting...')
+            print('Connecting to {}:{}'.format(HOST, PORT))
             try:
                 s.connect((HOST, PORT))
             except (ConnectionRefusedError, OSError) as e:
