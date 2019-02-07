@@ -141,7 +141,7 @@ chmod 0600 "${sdcard_mount}/home/pi/.ssh/authorized_keys"
 
 # Install discovery service
 echo "Installing Discovery service"
-sender_py="${scripts_path}/services/beholder_discovery_sender.py"
+sender_py="${scripts_path}/services/discovery/beholder_discovery_sender.py"
 if [[ ! -e ${sender_py} ]]
 then
     echo "Can't find the sender script \"${sender_py}\""
@@ -149,17 +149,17 @@ then
 fi
 cp -v ${sender_py} "${sdcard_mount}/home/pi/"
 
-sender_service="${scripts_path}/services/beholder_discovery_sender.service"
+sender_service="${scripts_path}/services/discovery/beholder_discovery_sender.service"
 if [[ ! -e ${sender_service} ]]
 then
     echo "Can't find the sender service file \"${sender_service}\""
     exit
 fi
-cp -v ${sender_service} "${sdcard_mount}/etc/systemd/user/"
+cp -v ${sender_service} "${sdcard_mount}/etc/systemd/system/"
 
 # Unit files are enabled by symlinking the unit file to a target.wants directory
 echo "Creating symlink to enable discovery service unit file"
-ln -s -v "/etc/systemd/user/beholder_discovery_sender.service" "${sdcard_mount}/etc/systemd/system/multi-user.target.wants/beholder_discovery_sender.service"
+ln -s -v "/etc/systemd/system/beholder_discovery_sender.service" "${sdcard_mount}/etc/systemd/system/multi-user.target.wants/beholder_discovery_sender.service"
 
 # Done modifying image
 echo ""
