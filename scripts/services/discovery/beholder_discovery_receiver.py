@@ -15,7 +15,6 @@ import threading
 from queue import Queue, Empty
 import curses
 import time
-import signal
 
 TYPE = 'UDP'
 HOST = ''
@@ -44,11 +43,11 @@ def update(stdscr, ev_stop):
     curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(4, curses.COLOR_RED, curses.COLOR_BLACK)
 
-    FRAME_TOP = ' ┌' + '─' * 17 + '┬' + '─' * 18 + '┬' + '─' * 15 + '┐\n'
-    FRAME_HEADER = ' │ {: ^15s} │ {: ^16s} │ {: ^13s} │\n'.format("Hostname", "IP", "STATUS")
-    FRAME_TOP_LOW = ' ├' + '─' * 17 + '┼' + '─' * 18 + '┼' + '─' * 15 + '┤\n'
-    FRAME_ROW = ' │ {: <15s} │ {: <16s} │ '
-    FRAME_BOTTOM = ' └' + '─' * 17 + '┴' + '─' * 18 + '┴' + '─' * 15 + '┘\n'
+    frame_top = ' ┌' + '─' * 17 + '┬' + '─' * 18 + '┬' + '─' * 15 + '┐\n'
+    table_header = ' │ {: ^15s} │ {: ^16s} │ {: ^13s} │\n'.format("Hostname", "IP", "STATUS")
+    frame_top_lower = ' ├' + '─' * 17 + '┼' + '─' * 18 + '┼' + '─' * 15 + '┤\n'
+    table_row = ' │ {: <15s} │ {: <16s} │ '
+    frame_bottom = ' └' + '─' * 17 + '┴' + '─' * 18 + '┴' + '─' * 15 + '┘\n'
 
     while not ev_stop.is_set():
         # Process user input
@@ -80,9 +79,9 @@ def update(stdscr, ev_stop):
         # Show current clients
         if stdscr is not None:
             stdscr.clear()
-            stdscr.addstr(FRAME_TOP, curses.color_pair(1))
-            stdscr.addstr(FRAME_HEADER, curses.color_pair(1))
-            stdscr.addstr(FRAME_TOP_LOW, curses.color_pair(1))
+            stdscr.addstr(frame_top, curses.color_pair(1))
+            stdscr.addstr(table_header, curses.color_pair(1))
+            stdscr.addstr(frame_top_lower, curses.color_pair(1))
 
             for client, (hostname, ts) in Clients.items():
                 delta = (time.time() - ts)
@@ -92,12 +91,12 @@ def update(stdscr, ev_stop):
                 if delta > LIFESIGN_TIMEOUT:
                     cp = 4
 
-                stdscr.addstr(FRAME_ROW.format(hostname, client), curses.color_pair(1))
+                stdscr.addstr(table_row.format(hostname, client), curses.color_pair(1))
                 al_str = '{: <5s} ({})'.format("ALIVE" if delta < LIFESIGN_TIMEOUT else "LOST", t_str(delta))
                 stdscr.addstr(al_str, curses.color_pair(cp))
                 stdscr.addstr(' ' * (14 - len(al_str)) + '│\n', curses.color_pair(1))
 
-            stdscr.addstr(FRAME_BOTTOM, curses.color_pair(1))
+            stdscr.addstr(frame_bottom, curses.color_pair(1))
             stdscr.refresh()
 
         time.sleep(.5)
