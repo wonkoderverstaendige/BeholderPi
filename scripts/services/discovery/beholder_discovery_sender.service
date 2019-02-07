@@ -1,5 +1,5 @@
 [Unit]
-Description=Announcer for BeholderPi clients
+Description=Discovery service for BeholderPi clients
 After=network.target
 
 [Service]
