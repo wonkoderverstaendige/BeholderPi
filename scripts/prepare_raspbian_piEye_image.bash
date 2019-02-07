@@ -20,6 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Check if super user, required for mounting
+if [[ "$EUID" -ne 0 ]]
+  then echo "Please run as root"
+  exit
+fi
+
 # Script location
 this_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 base_path="$( dirname "${this_path}" )"
