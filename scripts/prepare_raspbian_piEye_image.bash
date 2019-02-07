@@ -69,7 +69,7 @@ extracted_image=$( 7z l raspbian_lite_image.zip | awk '/-raspbian-/ {print $NF}'
 echo "The name of the image is \"${extracted_image}\""
 
 # to overwrite, -aoa, to skip, -aos
-7z x raspbian_lite_image.zip -aos
+7z x raspbian_lite_image.zip -aoa
 
 if [[ ! -e ${extracted_image} ]]
 then
