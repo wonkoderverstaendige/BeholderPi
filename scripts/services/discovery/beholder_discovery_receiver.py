@@ -93,7 +93,7 @@ def update(stdscr, ev_stop):
                     cp = 4
 
                 stdscr.addstr(FRAME_ROW.format(hostname, client), curses.color_pair(1))
-                al_str = '{: <5s} ({: <3.1f}s)'.format("ALIVE" if delta < LIFESIGN_TIMEOUT else "LOST", delta)
+                al_str = '{: <5s} ({})'.format("ALIVE" if delta < LIFESIGN_TIMEOUT else "LOST", t_str(delta))
                 stdscr.addstr(al_str, curses.color_pair(cp))
                 stdscr.addstr(' ' * (14 - len(al_str)) + '│\n', curses.color_pair(1))
 
@@ -115,6 +115,26 @@ def extract(data):
 
     print('returning None')
     return None, None
+
+
+def t_str(s):
+    """Turn time delta in seconds into short string across time scales."""
+    if s < 60:
+        return '{: >2.1f}s'.format(s)
+
+    m = s / 60
+    if m < 60:
+        return '{: >2.1f}m'.format(m)
+
+    h = m / 60
+    if h < 24:
+        return '{: >2.1f}h'.format(h)
+
+    d = h / 24
+    if d < 30:
+        return '{: >2.1f}d'.format(d)
+
+    return 'Inf'
 
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
