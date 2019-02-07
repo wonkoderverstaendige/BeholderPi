@@ -1,0 +1,40 @@
+- name: "Install basic packages"
+  apt:
+    pkg:
+      - vim
+      - git
+      - htop
+      - byobu
+      - python3-pip
+      - python3-picamera
+      - python3-zmq
+      - python3-apt
+      - python-setuptools  # workaround for ansible checking setuptools of the wrong python version!
+      - libzbar0
+    state: present
+
+- name: "Install pip packages"
+  pip:
+    name: pyyaml
+    executable: pip3
+
+- name: "Clone BeholderPi repository"
+  git:
+    repo: https://github.com/MemDynLab/BeholderPi
+    dest: /home/pi/src/BeholderPi
+    update: no
+
+- name: "Configure locale"
+  become: true
+  shell: |
+    raspi-config nonint do_change_locale en_US.UTF-8
+    raspi-config nonint do_configure_keyboard us
+
+
+# Enable boot flag that enables the camera in firmware
+- name: "Enable the raspberry camera"
+  become: true
+  lineinfile:
+    path: /boot/config.txt
+    regexp: '^start_x'
+    line: 'start_x=1'
