@@ -2,6 +2,9 @@
 beholder/img/
 .idea/
 
+# Ansible retry files
+*.retry
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
