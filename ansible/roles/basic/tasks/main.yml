@@ -15,7 +15,10 @@
 
 - name: "Install pip packages"
   pip:
-    name: pyyaml
+    name:
+      - pyyaml
+      - pyzbar
+      - Pillow
     executable: pip3
 
 - name: "Clone BeholderPi repository"
