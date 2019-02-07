@@ -6,7 +6,7 @@ After=network.target
 Type=idle
 User=pi
 WorkingDirectory=/home/pi
-ExecStart=/usr/bin/python3 /home/pi/src/beholder_announce_sender.py > /home/pi/announcer.log 2>&1
+ExecStart=/usr/bin/python3 /home/pi/beholder_discovery_sender.py > /home/pi/beholder_discovery.log 2>&1
 Restart=on-failure
 
 [Install]
