@@ -67,7 +67,7 @@
 - name: Enable streaming service
   systemd:
     name: beholder_streaming
-    status: enabled
+    enabled: yes
   register: reboot_required
 
 

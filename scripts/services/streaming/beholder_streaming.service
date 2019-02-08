@@ -6,7 +6,7 @@ After=network.target
 Type=idle
 User=pi
 WorkingDirectory=/home/pi
-ExecStart=/usr/bin/python3 /home/pi/src/BeholderPi/main.py > /home/pi/piEye_streaming.log 2>&1
+ExecStart=/usr/bin/python3 /home/pi/src/BeholderPi/piEye/main.py > /home/pi/piEye_streaming.log 2>&1
 
 [Install]
 WantedBy=multi-user.target

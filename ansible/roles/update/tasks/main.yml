@@ -17,8 +17,16 @@
     daemon-reload: yes
   when: service_restart
 
-- name: "Restart Discovery Service"
+- name: "Restart discovery service"
   systemd:
     name: beholder_discovery_sender
     state: restarted
+    no_block: yes
+  when: service_restart
+
+- name: "Restart streaming service"
+  systemd:
+    name: beholder_streaming
+    state: restarted
+    no_block: yes
   when: service_restart
