@@ -44,7 +44,14 @@ github_repo="https://github.com/MemDynLab/BeholderPi.git"
 checksum="$(wget --quiet https://www.raspberrypi.org/downloads/raspbian/ -O - | egrep -m 3 'SHA-256' | awk -F '<|>' '{i++}i==3{print $9}')"
 
 sdcard_mount="/mnt/beholderpi_sdcard"
-public_key_file="id_ed25519.pub"
+
+if [[ "$1" != "" ]]
+then
+    echo " Pew Pew $1"
+    public_key_file=$1
+else
+    public_key_file="id_ed25519.pub"
+fi
 
 if [[ ! -e "${public_key_file}" ]]
 then
