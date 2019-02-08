@@ -56,17 +56,20 @@
     dest: /home/pi/src/BeholderPi
     update: yes
 
+
 - name: Create symbolic link
   file:
     src: "/home/pi/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
     dest: "/etc/systemd/system/beholder_streaming.service"
     state: link
 
+
 - name: Enable streaming service
   systemd:
     name: beholder_streaming
     status: enabled
   register: reboot_required
+
 
 - name: Reboot immediately if there was a change
   shell: "sleep 3 && reboot"
