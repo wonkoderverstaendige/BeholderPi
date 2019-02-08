@@ -1,4 +1,4 @@
-- name: "Install basic packages"
+- name: Install basic packages
   apt:
     pkg:
       - vim
@@ -13,7 +13,8 @@
       - libzbar0
     state: present
 
-- name: "Install pip packages"
+
+- name: Install pip packages
   pip:
     name:
       - pyyaml
@@ -21,21 +22,8 @@
       - Pillow
     executable: pip3
 
-- name: "Clone BeholderPi repository"
-  git:
-    repo: https://github.com/MemDynLab/BeholderPi
-    dest: /home/pi/src/BeholderPi
-    update: yes
 
-#- name: "Configure locale"
-#  become: true
-#  shell: |
-#    raspi-config nonint do_change_locale en_US.UTF-8
-#    raspi-config nonint do_configure_keyboard us
-
-
-# Enable boot flag that enables the camera in firmware
-- name: "Enable the raspberry camera"
+- name: Enable the raspberry camera
   become: true
   lineinfile:
     path: /boot/config.txt
@@ -43,13 +31,15 @@
     line: 'start_x=1'
   register: reboot_required
 
-- name: "Set up hostname based on host variable"
+
   # Note that this does not update /etc/hosts
+- name: Set up hostname based on host variable
   hostname:
     name: "piEye{{ hostname_suffix|quote }}"
   register: reboot_required
 
-- name: "Modify hostname in /etc/hosts"
+
+- name: Modify hostname in /etc/hosts
   lineinfile:
     path: /etc/hosts
     regexp: '^127\.0\.1\.1'
@@ -59,16 +49,44 @@
     mode: 0644
   register: reboot_required
 
-- name: "Reboot immediately if there was a change."
+
+- name: Clone BeholderPi repository
+  git:
+    repo: https://github.com/MemDynLab/BeholderPi
+    dest: /home/pi/src/BeholderPi
+    update: yes
+
+- name: Create symbolic link
+  file:
+    src: "/home/pi/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
+    dest: "/etc/systemd/system/beholder_streaming.service"
+    state: link
+
+- name: Enable streaming service
+  systemd:
+    name: beholder_streaming
+    status: enabled
+  register: reboot_required
+
+- name: Reboot immediately if there was a change
   shell: "sleep 3 && reboot"
   async: 1
   poll: 0
   when: reboot_required is changed
 
-- name: "Wait for the reboot to complete if there was a change."
+
+- name: Wait for the reboot to complete if there was a change
   wait_for_connection:
     connect_timeout: 20
     sleep: 5
     delay: 5
     timeout: 300
   when: reboot_required is changed
+
+
+#- name: "Configure locale"
+#  become: true
+#  shell: |
+#    raspi-config nonint do_change_locale en_US.UTF-8
+#    raspi-config nonint do_configure_keyboard us
+

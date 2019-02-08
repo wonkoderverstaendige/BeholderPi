@@ -4,4 +4,4 @@
   become: true
   roles:
   - update
-  - basic
+  - eye
