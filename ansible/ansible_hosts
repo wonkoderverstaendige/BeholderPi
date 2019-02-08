@@ -1,0 +1,9 @@
+[beholder]
+131.175.140.26
+
+[eyes]
+131.174.140.213  hostname_suffix=x2
+
+131.174.140.228  hostname_suffix=01
+131.174.140.156  hostname_suffix=02
+131.174.140.134  hostname_suffix=03

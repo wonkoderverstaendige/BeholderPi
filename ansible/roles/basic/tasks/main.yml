@@ -25,13 +25,13 @@
   git:
     repo: https://github.com/MemDynLab/BeholderPi
     dest: /home/pi/src/BeholderPi
-    update: no
+    update: yes
 
-- name: "Configure locale"
-  become: true
-  shell: |
-    raspi-config nonint do_change_locale en_US.UTF-8
-    raspi-config nonint do_configure_keyboard us
+#- name: "Configure locale"
+#  become: true
+#  shell: |
+#    raspi-config nonint do_change_locale en_US.UTF-8
+#    raspi-config nonint do_configure_keyboard us
 
 
 # Enable boot flag that enables the camera in firmware
@@ -41,3 +41,34 @@
     path: /boot/config.txt
     regexp: '^start_x'
     line: 'start_x=1'
+  register: reboot_required
+
+- name: "Set up hostname based on host variable"
+  # Note that this does not update /etc/hosts
+  hostname:
+    name: "piEye{{ hostname_suffix|quote }}"
+  register: reboot_required
+
+- name: "Modify hostname in /etc/hosts"
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: '127.0.1.1        piEye{{ hostname_suffix|quote }}'
+    owner: root
+    group: root
+    mode: 0644
+  register: reboot_required
+
+- name: "Reboot immediately if there was a change."
+  shell: "sleep 3 && reboot"
+  async: 1
+  poll: 0
+  when: reboot_required is changed
+
+- name: "Wait for the reboot to complete if there was a change."
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 5
+    timeout: 300
+  when: reboot_required is changed

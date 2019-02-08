@@ -4,3 +4,21 @@
     upgrade: yes
     update_cache: yes
     cache_valid_time: 86400
+
+- name: "Clone BeholderPi repository"
+  git:
+    repo: https://github.com/MemDynLab/BeholderPi
+    dest: /home/pi/src/BeholderPi
+    update: yes
+  register: service_restart
+
+- name: "Reload Systemd config"
+  systemd:
+    daemon-reload: yes
+  when: service_restart
+
+- name: "Restart Discovery Service"
+  systemd:
+    name: beholder_discovery_sender
+    state: restarted
+  when: service_restart
