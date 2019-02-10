@@ -32,24 +32,6 @@
   register: reboot_required
 
 
-  # Note that this does not update /etc/hosts
-- name: Set up hostname based on host variable
-  hostname:
-    name: "piEye{{ hostname_suffix|quote }}"
-  register: reboot_required
-
-
-- name: Modify hostname in /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    regexp: '^127\.0\.1\.1'
-    line: '127.0.1.1        piEye{{ hostname_suffix|quote }}'
-    owner: root
-    group: root
-    mode: 0644
-  register: reboot_required
-
-
 - name: Clone BeholderPi repository
   git:
     repo: https://github.com/MemDynLab/BeholderPi

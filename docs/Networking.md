@@ -16,7 +16,7 @@ at 10.0.0.11.
 
 - monitor the appearance of a new host in the discovery table.
 - look up MAC adress of the new host:
-    `ssh pi@10.0.0.xxx 'cat /sys/class/net/eth0/address'`
+    `ssh pi@host.ip 'cat /sys/class/net/eth0/address'`
 - enter new MAC mapping in the `ansible/setup/network/vars.yml` file
 - enter temporary IP in `ansible/setup/network/inventory`
 - Execute the network setup playbook in the `ansible/setup/network` directory:

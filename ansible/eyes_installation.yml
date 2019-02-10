@@ -1,8 +1,0 @@
----
-- hosts: eyes
-  remote_user: pi
-  become: true
-  roles:
-  - update
-  - eye
-  - telegrafer
