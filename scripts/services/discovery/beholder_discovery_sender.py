@@ -71,7 +71,7 @@ def serve_udp():
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         while True:
             info_json = json.dumps(gather_info())
-            print('Sending', info_json)
+            # print('Sending', info_json)
             s.sendto(str.encode(info_json), ('<broadcast>', UDP_PORT))
             time.sleep(SEND_INTERVAL)
 
