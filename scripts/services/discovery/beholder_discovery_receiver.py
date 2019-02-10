@@ -30,7 +30,7 @@ Clients = {}
 packet_queue = Queue()
 
 
-def update(stdscr, ev_stop):
+def update(stdscr, ev_stop, client_dict):
     curses.curs_set(0)
     curses.start_color()
     curses.noecho()
@@ -50,12 +50,15 @@ def update(stdscr, ev_stop):
     frame_bottom = ' └' + '─' * 17 + '┴' + '─' * 18 + '┴' + '─' * 15 + '┘\n'
 
     while not ev_stop.is_set():
+        reset = False
         # Process user input
         try:
             c = stdscr.getkey()
             if c == 'q':
                 ev_stop.set()
                 break
+            if c == 'r':
+                client_dict.clear()
 
         except curses.error:
             pass
@@ -74,7 +77,7 @@ def update(stdscr, ev_stop):
             if ip != addr:
                 raise LookupError('Reported and sent IPs do not match: {} vs {}'.format(ip, addr))
 
-            Clients[ip] = (hostname, ts)
+            client_dict[ip] = (hostname, ts)
 
         # Show current clients
         if stdscr is not None:
@@ -83,7 +86,8 @@ def update(stdscr, ev_stop):
             stdscr.addstr(table_header, curses.color_pair(1))
             stdscr.addstr(frame_top_lower, curses.color_pair(1))
 
-            for client, (hostname, ts) in Clients.items():
+            for cl in sorted(client_dict.keys()):
+                (hostname, ts) = client_dict[cl]
                 delta = (time.time() - ts)
                 cp = 2
                 if delta > LIFESIGN_LAG:
@@ -91,7 +95,7 @@ def update(stdscr, ev_stop):
                 if delta > LIFESIGN_TIMEOUT:
                     cp = 4
 
-                stdscr.addstr(table_row.format(hostname, client), curses.color_pair(1))
+                stdscr.addstr(table_row.format(hostname, cl), curses.color_pair(1))
                 al_str = '{: <5s} ({})'.format("ALIVE" if delta < LIFESIGN_TIMEOUT else "LOST", t_str(delta))
                 stdscr.addstr(al_str, curses.color_pair(cp))
                 stdscr.addstr(' ' * (14 - len(al_str)) + '│\n', curses.color_pair(1))
@@ -171,7 +175,7 @@ def main(stdscr):
         st.start()
 
         # Reporter thread
-        rt = threading.Thread(target=update, args=(stdscr, _STOP, ))
+        rt = threading.Thread(target=update, args=(stdscr, _STOP, Clients, ))
         # rt.daemon = True
         rt.start()
 
