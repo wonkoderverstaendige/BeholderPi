@@ -1,25 +1,26 @@
-from imutils.video import VideoStream
+import io
+import time
+import picamera
+from PIL import Image
 from pyzbar import pyzbar
 
-import imutils
-import time
+# Create the in-memory stream
+stream = io.BytesIO()
+with picamera.PiCamera() as camera:
+    camera.start_preview()
+    while True:
+        camera.capture(stream, format='jpeg')
 
-# initialize the video stream and allow the camera sensor to warm up
-print("[INFO] starting video stream...")
+        # "Rewind" the stream to the beginning so we can read its content
+        stream.seek(0)
+        image = Image.open(stream)
 
-vs = VideoStream(usePiCamera=True).start()
-time.sleep(0.2)
+        barcodes = pyzbar.decode(image)
 
+        for barcode in barcodes:
+            bc_data = barcode.data.decode('utf-8')
+            bc_type = barcode.type
 
-while True:
-    frame = vs.read()
-    frame = imutils.resize(frame, width=400)
+            bc_text = "{} ({})".format(bc_data, bc_type)
+            print(bc_text)
 
-    barcodes = pyzbar.decode(frame)
-
-    for barcode in barcodes:
-        bc_data = barcode.data.decode('utf-8')
-        bc_type = barcode.type
-
-        bc_text = "{} ({})".format(bc_data, bc_type)
-        print(bc_text)
