@@ -1,3 +1,8 @@
+- name: Populate service facts
+  service_facts:
+#- debug:
+#    var: ansible_facts.services
+
 - name: Update all installed apt packages
   become: true
   apt:
@@ -23,10 +28,12 @@
     state: restarted
     no_block: yes
   when: service_restart
+  changed_when: False
 
 - name: "Restart streaming service"
   systemd:
     name: beholder_streaming
     state: restarted
     no_block: yes
-  when: service_restart
+  when: "'beholder_streaming.service' in services"
+  changed_when: False

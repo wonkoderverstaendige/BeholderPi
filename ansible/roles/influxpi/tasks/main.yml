@@ -1,0 +1,37 @@
+- name: Check if influxdb is running
+  systemd:
+    name: influxdb
+    state: started
+  register: influxdb_install_required
+  ignore_errors: True
+
+- name: Install InfluxDB repository key
+  apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    state: present
+
+- name: Add InfluxDB repository deb
+  apt_repository:
+    repo: deb https://repos.influxdata.com/debian stretch stable
+    state: present
+  when: influxdb_install_required
+
+- name: Install apt packages
+  apt:
+    pkg:
+      - influxdb
+    state: present
+
+#- name: Enable DHCP for eth0 interface
+#  lineinfile:
+#    path: /etc/default/isc-dhcp-server
+#    regexp: '^INTERFACESv4'
+#    line: 'INTERFACESv4="eth0"'
+#  register: dhcp_config_change
+#
+#- name: Restart dhcp server
+#  systemd:
+#    name: isc-dhcp-server
+#    state: restarted
+#  when: dhcp_config_change
+#  changed_when: False

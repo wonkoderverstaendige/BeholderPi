@@ -1,0 +1,26 @@
+- name: Check if telegraf is running
+  systemd:
+    name: telegraf
+    state: started
+  register: telegraf_install_required
+  ignore_errors: True
+
+- name: Install InfluxDB repository key
+  apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    state: present
+  when: telegraf_install_required
+
+- name: Add InfluxDB repository deb
+  apt_repository:
+    repo: deb https://repos.influxdata.com/debian stretch stable
+    state: present
+  when: telegraf_install_required
+
+- name: Install telegraf
+  apt:
+    pkg: telegraf
+    state: present
+  when: telegraf_install_required
+
+#TODO: NEEDS CONFIG FILE AND SERVICE INSTALLATION!
