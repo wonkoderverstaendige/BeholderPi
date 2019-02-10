@@ -15,6 +15,7 @@ import threading
 from queue import Queue, Empty
 import curses
 import time
+import json
 
 TYPE = 'UDP'
 HOST = ''
@@ -30,7 +31,7 @@ Clients = {}
 packet_queue = Queue()
 
 
-def update(stdscr, ev_stop, client_dict):
+def update_loop(stdscr, ev_stop, client_dict):
     curses.curs_set(0)
     curses.start_color()
     curses.noecho()
@@ -42,15 +43,32 @@ def update(stdscr, ev_stop, client_dict):
     curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(4, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
 
-    frame_top = ' ┌' + '─' * 17 + '┬' + '─' * 18 + '┬' + '─' * 15 + '┐\n'
-    table_header = ' │ {: ^15s} │ {: ^16s} │ {: ^13s} │\n'.format("Hostname", "IP", "STATUS")
-    frame_top_lower = ' ├' + '─' * 17 + '┼' + '─' * 18 + '┼' + '─' * 15 + '┤\n'
-    table_row = ' │ {: <15s} │ {: <16s} │ '
-    frame_bottom = ' └' + '─' * 17 + '┴' + '─' * 18 + '┴' + '─' * 15 + '┘\n'
+    status_color_map = {'alive': 2,
+                        'delay': 3,
+                        'lost': 4,
+                        'invalid': 5}
+
+    # frame_top = ' ┌' + '─' * 17 + '┬' + '─' * 18 + '┬' + '─' * 15 + '┐\n'
+    # table_header = ' │ {: ^15s} │ {: ^16s} │ {: ^13s} │\n'.format("Hostname", "IP", "STATUS")
+    # frame_top_lower = ' ├' + '─' * 17 + '┼' + '─' * 18 + '┼' + '─' * 15 + '┤\n'
+    # table_row = ' │ {: <15s} │ {: <16s} │ '
+    # frame_bottom = ' └' + '─' * 17 + '┴' + '─' * 18 + '┴' + '─' * 15 + '┘\n'
+
+    columns = [('hostname', 'Hostname', 17),
+               ('src_ip', 'Source IP', 18),
+               ('mac', 'MAC', 19),
+               ('status', 'Status', 16)]
+
+    frame_top = ' ┌' + '┬'.join(['─' * c[2] for c in columns]) + '┐\n'
+    header_template = ' │' + '│'.join(['{: ^'+str(c[2])+'s}' for c in columns]) + '│\n'
+    table_header = header_template.format(*[c[1] for c in columns])
+
+    frame_top_lower = ' ├' + '┼'.join(['─' * c[2] for c in columns]) + '┤\n'
+    frame_bottom = ' └' + '┴'.join(['─' * c[2] for c in columns]) + '┘\n'
 
     while not ev_stop.is_set():
-        reset = False
         # Process user input
         try:
             c = stdscr.getkey()
@@ -62,22 +80,18 @@ def update(stdscr, ev_stop, client_dict):
 
         except curses.error:
             pass
-
-        # Process new packets
-        while True:
-            try:
-                packet = packet_queue.get(timeout=.1)
-            except Empty:
-                break
-
-            if None in packet:
-                continue
-
-            ip, hostname, addr, ts = packet
-            if ip != addr:
-                raise LookupError('Reported and sent IPs do not match: {} vs {}'.format(ip, addr))
-
-            client_dict[ip] = (hostname, ts)
+        #
+        # # Process new packets
+        # while True:
+        #     try:
+        #         packet = packet_queue.get(timeout=.1)
+        #     except Empty:
+        #         break
+        #
+        #     if None in packet:
+        #         continue
+        #
+        #     client_dict[packet['src_ip']] = packet
 
         # Show current clients
         if stdscr is not None:
@@ -86,19 +100,41 @@ def update(stdscr, ev_stop, client_dict):
             stdscr.addstr(table_header, curses.color_pair(1))
             stdscr.addstr(frame_top_lower, curses.color_pair(1))
 
-            for cl in sorted(client_dict.keys()):
-                (hostname, ts) = client_dict[cl]
-                delta = (time.time() - ts)
-                cp = 2
-                if delta > LIFESIGN_LAG:
-                    cp = 3
-                if delta > LIFESIGN_TIMEOUT:
-                    cp = 4
+            for src_ip in sorted(client_dict):
+                host = client_dict[src_ip]
 
-                stdscr.addstr(table_row.format(hostname, cl), curses.color_pair(1))
-                al_str = '{: <5s} ({})'.format("ALIVE" if delta < LIFESIGN_TIMEOUT else "LOST", t_str(delta))
-                stdscr.addstr(al_str, curses.color_pair(cp))
-                stdscr.addstr(' ' * (14 - len(al_str)) + '│\n', curses.color_pair(1))
+                delta = (time.time() - host['localtime'])
+                if host['data'] == 'invalid':
+                    hostname = ''
+                    status = 'Invalid'
+                else:
+                    hostname = host['hostname']
+                    if delta < LIFESIGN_TIMEOUT:
+                        status = 'ALIVE'
+                    elif delta < LIFESIGN_LAG:
+                        status = 'DELAY'
+                    else:
+                        status = 'LOST'
+
+                stdscr.addstr(' ', curses.color_pair(1))
+                for col in columns:
+                    if col[0] == 'status':
+                        stdscr.addstr('│ ', curses.color_pair(1))
+                        status_color = status_color_map[status.lower()]
+                        al_str = '{: <5s} ({})'.format(status, t_str(delta))
+                        stdscr.addstr(al_str, curses.color_pair(status_color))
+                        stdscr.addstr(' ' * (col[2] - 1 - len(al_str)) + '│\n', curses.color_pair(1))
+                    else:
+                        value = ''
+                        if col[0] == 'mac' and col[0] in host:
+                            value = host['mac']
+                        elif col[0] == 'hostname':
+                            value = hostname
+                        elif col[0] == 'src_ip':
+                            value = src_ip
+
+                        cell = '│ {: <' + str(col[2] - 1) + 's}'
+                        stdscr.addstr(cell.format(str(value)), curses.color_pair(1))
 
             stdscr.addstr(frame_bottom, curses.color_pair(1))
             stdscr.refresh()
@@ -106,18 +142,14 @@ def update(stdscr, ev_stop, client_dict):
         time.sleep(.5)
 
 
-def extract(data):
-    data_str = bytes.decode(data)
+def process_packet(data):
     try:
-        if ':' in data_str:
-            ip, host = data_str.split(':')
-            return ip.strip(), host.strip()
-
-    except ValueError:
-        print('Data invalid')
-
-    print('returning None')
-    return None, None
+        data_dict = json.loads(bytes.decode(data))
+        data_dict['data'] = 'valid'
+    except json.JSONDecodeError:
+        data_dict = {'data': 'invalid',
+                     'localtime': time.time()}
+    return data_dict
 
 
 def t_str(s):
@@ -143,17 +175,19 @@ def t_str(s):
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
-        client_ip, client_hostname = extract(self.request.recv(1024).strip())
-        packet = (client_ip, client_hostname, self.client_address[0], time.time(),)
-        packet_queue.put(packet)
+        packet = process_packet(self.request.recv(1024).strip())
+        if packet is not None:
+            # packet_queue.put(packet)
+            Clients[self.client_address[0]] = packet
 
 
 class MyUDPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
-        client_hostname, client_ip = extract(self.request[0].strip())
-        packet = (client_ip, client_hostname, self.client_address[0], time.time(),)
-        packet_queue.put(packet)
+        packet = process_packet(self.request[0].strip())
+        if packet is not None:
+            # packet_queue.put(packet)
+            Clients[self.client_address[0]] = packet
 
 
 def main(stdscr):
@@ -175,7 +209,7 @@ def main(stdscr):
         st.start()
 
         # Reporter thread
-        rt = threading.Thread(target=update, args=(stdscr, _STOP, Clients, ))
+        rt = threading.Thread(target=update_loop, args=(stdscr, _STOP, Clients,))
         # rt.daemon = True
         rt.start()
 
@@ -195,6 +229,7 @@ if __name__ == "__main__":
     finally:
         curses.curs_set(1)
 
-    # print list on exit, for easy access
-    for client, values in Clients.items():
-        print(values[0], client, time.time() - values[1])
+    # # print list on exit, for easy access
+    # for client, values in Clients.items():
+    #     print(values[0], client, time.time() - values[1])
+    print(Clients)
