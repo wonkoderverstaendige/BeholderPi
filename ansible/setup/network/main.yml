@@ -1,0 +1,58 @@
+---
+- hosts:
+    - eyes
+    - new_eyes
+
+  become: yes
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Set the current MAC address for eth0.
+      set_fact:
+        eye_mac_address: "{{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }}"
+
+    - name: Set variables based on eth0 MAC address.
+      set_fact:
+        eye_hostname: "{{ mac_address_mapping[eye_mac_address].name }}"
+#        eye_ip_address: "{{ mac_address_mapping[eye_mac_address].ip }}"
+
+    - name: Set up networking-related files.
+      template:
+        src: "templates/{{ item.template }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      with_items:
+        - { template: hostname.j2, dest: /etc/hostname }
+        - { template: hosts.j2, dest: /etc/hosts }
+#        - { template: resolv.conf.j2, dest: /etc/resolv.conf }  # overwritten in Stretch?
+        - { template: dhcpcd.conf.j2, dest: /etc/dhcpcd.conf }
+      notify:
+        - update hostname
+        - delete dhcp leases
+
+  handlers:
+    - name: update hostname
+      command: "hostname {{ eye_hostname }}"
+
+    - name: delete dhcp leases
+      file:
+        path: /var/lib/dhcp/dhclient.leases
+        state: absent
+      with_items:
+        - /var/lib/dhcp/dhclient.leases
+        - /var/lib/dhcpcd5/dhcpcd-eth0.lease
+
+    - name: Reboot with hostname update
+      shell: "sleep 1 && reboot"
+      async: 1
+      poll: 0
+
+#    - name: Wait for the reboot to complete if there was a change
+#      wait_for_connection:
+#        connect_timeout: 20
+#        sleep: 5
+#        delay: 5
+#        timeout: 300
+#      when: reboot_required is changed

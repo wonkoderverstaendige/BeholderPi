@@ -1,0 +1,23 @@
+---
+# MAC to hostname mapping
+mac_address_mapping:
+
+  "b8:27:eb:80:eb:8c":
+    name: eye01
+
+  "b8:27:eb:b3:a5:3f":
+    name: eye02
+
+  "b8:27:eb:36:24:1a":
+    name: eye03
+
+  "01:b8:27:eb:9f:ab:2a":
+    name: eye13
+
+# Nameservers to use in resolv.conf.
+dns_nameservers:
+  - "10.0.0.1"
+  - "8.8.4.4"
+
+beholder_router:
+  - "10.0.0.1"
