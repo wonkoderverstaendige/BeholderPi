@@ -47,19 +47,31 @@ sdcard_mount="/mnt/beholderpi_sdcard"
 
 if [[ "$1" != "" ]]
 then
-    echo " Pew Pew $1"
-    public_key_file=$1
+    private_key_file=$1
 else
-    public_key_file="id_ed25519.pub"
+    private_key_file="id_ed25519.pub"
 fi
+
+if [[ ! -e "${private_key_file}" ]]
+then
+    echo "Can't find the common private key file \"${private_key_file}\""
+    echo "You can create a key pair using:"
+    echo "   ssh-keygen -t ed25519 -f ./id_beholderpi -C \"BeholderPi keys\""
+    exit
+fi
+
+public_key_file="${private_key_file}.pub"
 
 if [[ ! -e "${public_key_file}" ]]
 then
-    echo "Can't find the public key file \"${public_key_file}\""
-    echo "You can create one using:"
-    echo "   ssh-keygen -t ed25519 -f ./id_ed25519 -C \"BeholderPi keys\""
+    echo "Can't find the matching public key file \"${public_key_file}\" to \"${private_key_file}\""
+    echo "You can create a key pair using:"
+    echo "   ssh-keygen -t ed25519 -f ./id_beholderpi -C \"BeholderPi keys\""
     exit
 fi
+
+echo "Using key file pair \"${private_key_file}\" and \"${public_key_file}\""
+echo ""
 
 # Download the latest image, using the  --continue "Continue getting a partially-downloaded file"
 wget --continue ${image_to_download} -O raspbian_lite_image.zip
@@ -82,7 +94,7 @@ extracted_image=$( 7z l raspbian_lite_image.zip | awk '/-raspbian-/ {print $NF}'
 echo "The name of the image is \"${extracted_image}\""
 
 # to overwrite, -aoa, to skip, -aos
-7z x raspbian_lite_image.zip -aoa
+7z x raspbian_lite_image.zip -aos
 
 if [[ ! -e ${extracted_image} ]]
 then
@@ -136,9 +148,13 @@ sed -e 's;^#PasswordAuthentication.*$;PasswordAuthentication no;g' -e 's;^Permit
 mkdir "${sdcard_mount}/home/pi/.ssh"
 chmod 0700 "${sdcard_mount}/home/pi/.ssh"
 chown 1000:1000 "${sdcard_mount}/home/pi/.ssh"
+cp -v ${private_key_file} "${sdcard_mount}/home/pi/.ssh/"
+cp -v ${public_key_file} "${sdcard_mount}/home/pi/.ssh/"
 cat ${public_key_file} >> "${sdcard_mount}/home/pi/.ssh/authorized_keys"
-chown 1000:1000 "${sdcard_mount}/home/pi/.ssh/authorized_keys"
-chmod 0600 "${sdcard_mount}/home/pi/.ssh/authorized_keys"
+chown -R 1000:1000 "${sdcard_mount}/home/pi/.ssh"
+chmod 0644 "${sdcard_mount}/home/pi/.ssh/authorized_keys"
+echo "Setting permission on ${sdcard_mount}/home/pi/.ssh/$( basename -- "${private_key_file}" )"
+chmod 0600 "${sdcard_mount}/home/pi/.ssh/$( basename -- "${private_key_file}" )"
 
 # Clone github repository
 #src_dir="${sdcard_mount}/home/pi/src"
@@ -153,6 +169,7 @@ chmod 0600 "${sdcard_mount}/home/pi/.ssh/authorized_keys"
 #git clone "${github_repo}" "${src_dir}/BeholderPi"
 
 # Install discovery service
+echo ""
 echo "Installing Discovery service"
 sender_py="${scripts_path}/services/discovery/beholder_discovery_sender.py"
 if [[ ! -e ${sender_py} ]]
@@ -162,7 +179,7 @@ then
 fi
 cp -v ${sender_py} "${sdcard_mount}/home/pi/"
 
-sender_service="${scripts_path}/services/discovery/beholder_discovery_sender.service"
+sender_service="${scripts_path}services/discovery/beholder_discovery_sender.service"
 if [[ ! -e ${sender_service} ]]
 then
     echo "Can't find the sender service file \"${sender_service}\""
@@ -171,8 +188,13 @@ fi
 cp -v ${sender_service} "${sdcard_mount}/etc/systemd/system/"
 
 # Unit files are enabled by symlinking the unit file to a target.wants directory
+echo ""
 echo "Creating symlink to enable discovery service unit file"
-ln -s -v "/etc/systemd/system/beholder_discovery_sender.service" "${sdcard_mount}/etc/systemd/system/multi-user.target.wants/beholder_discovery_sender.service"
+service_link_target="${sdcard_mount}/etc/systemd/system/multi-user.target.wants/beholder_discovery_sender.service"
+echo ${service_link_target}
+
+rm -f "${service_link_target}"
+ln -sv "/etc/systemd/system/beholder_discovery_sender.service" "${sdcard_mount}/etc/systemd/system/multi-user.target.wants/beholder_discovery_sender.service"
 
 # Done modifying image
 echo ""
