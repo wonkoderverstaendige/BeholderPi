@@ -1,8 +1,8 @@
 ---
-- hosts: eyes
+- hosts: influxpi
   remote_user: pi
   become: true
   roles:
   - update
-  - eye
   - telegrafer
+  - influxpi
