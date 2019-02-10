@@ -48,7 +48,7 @@ def update_loop(stdscr, ev_stop, client_dict):
     status_color_map = {'alive': 2,
                         'delay': 3,
                         'lost': 4,
-                        'invalid': 5}
+                        'fault': 5}
 
     # frame_top = ' ┌' + '─' * 17 + '┬' + '─' * 18 + '┬' + '─' * 15 + '┐\n'
     # table_header = ' │ {: ^15s} │ {: ^16s} │ {: ^13s} │\n'.format("Hostname", "IP", "STATUS")
@@ -58,7 +58,8 @@ def update_loop(stdscr, ev_stop, client_dict):
 
     columns = [('hostname', 'Hostname', 17),
                ('src_ip', 'Source IP', 18),
-               ('mac', 'MAC', 19),
+               # ('mac', 'MAC', 19),
+               ('tzdelta', 'Time delta', 10),
                ('status', 'Status', 16)]
 
     frame_top = ' ┌' + '┬'.join(['─' * c[2] for c in columns]) + '┐\n'
@@ -103,10 +104,10 @@ def update_loop(stdscr, ev_stop, client_dict):
             for src_ip in sorted(client_dict):
                 host = client_dict[src_ip]
 
-                delta = (time.time() - host['localtime'])
+                delta = (time.time() - host['arrival'])
                 if host['data'] == 'invalid':
                     hostname = ''
-                    status = 'Invalid'
+                    status = 'FAULT'
                 else:
                     hostname = host['hostname']
                     if delta < LIFESIGN_TIMEOUT:
@@ -132,6 +133,10 @@ def update_loop(stdscr, ev_stop, client_dict):
                             value = hostname
                         elif col[0] == 'src_ip':
                             value = src_ip
+                        elif col[0] == 'tzdelta':
+                            if 'localtime' in host:
+                                t_diff = host['arrival'] - host['localtime']
+                                value = t_str(t_diff, ms=True)
 
                         cell = '│ {: <' + str(col[2] - 1) + 's}'
                         stdscr.addstr(cell.format(str(value)), curses.color_pair(1))
@@ -147,27 +152,34 @@ def process_packet(data):
         data_dict = json.loads(bytes.decode(data))
         data_dict['data'] = 'valid'
     except json.JSONDecodeError:
-        data_dict = {'data': 'invalid',
-                     'localtime': time.time()}
+        data_dict = {'data': 'invalid'}
+
+    # Add arrival timestamp
+    data_dict['arrival'] = time.time()
     return data_dict
 
 
-def t_str(s):
+def t_str(s, precision='2.1', ms=False):
     """Turn time delta in seconds into short string across time scales."""
+    # TODO: Handle negative differences!
+    fmt_str = '{: >' + precision + 'f}'
+    if s < 1 and ms:
+        return '{: >3.0f}'.format(s*1000) + 'ms'
+
     if s < 60:
-        return '{: >2.1f}s'.format(s)
+        return fmt_str.format(s) + 's'
 
     m = s / 60
     if m < 60:
-        return '{: >2.1f}m'.format(m)
+        return fmt_str.format(m) + 'm'
 
     h = m / 60
     if h < 24:
-        return '{: >2.1f}h'.format(h)
+        return fmt_str.format(h) + 'h'
 
     d = h / 24
     if d < 30:
-        return '{: >2.1f}d'.format(d)
+        return fmt_str.format(d) + 'd'
 
     return 'Inf'
 
