@@ -2,5 +2,46 @@
 - hosts: eyes
   remote_user: pi
   become: true
-  roles:
-  - update
+
+  tasks:
+    - name: Populate service facts
+      service_facts:
+
+    - name: Update all installed apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400
+      ignore_errors: true
+#      failed_when: false
+      no_log: true
+
+    - name: Git setup | Update from influxpi remote to check
+      become_user: pi
+      git:
+        repo: ssh://influxpi/home/pi/src/BeholderPi
+        update: yes
+        dest: /home/pi/src/BeholderPi
+        remote: influxpi
+      register: service_restart
+
+    - name: Reload Systemd config
+      systemd:
+        daemon-reload: yes
+      when: service_restart
+
+    - name: Restart discovery service
+      systemd:
+        name: beholder_discovery_sender
+        state: restarted
+        no_block: yes
+      when: service_restart
+      changed_when: False
+
+    - name: Restart streaming service
+      systemd:
+        name: beholder_streaming
+        state: restarted
+        no_block: yes
+      when: "'beholder_streaming.service' in services"
+      changed_when: False

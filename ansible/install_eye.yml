@@ -3,13 +3,13 @@
   remote_user: pi
   become: true
   tasks:
-    - name: Update all installed apt packages
+    - name: System setup | Update all installed apt packages
       apt:
         upgrade: yes
         update_cache: yes
         cache_valid_time: 86400
 
-    - name: Install basic packages
+    - name: System setup | Install basic packages
       apt:
         pkg:
           - vim
@@ -25,7 +25,7 @@
           - libzbar0
         state: present
 
-    - name: Install pip packages
+    - name: System setup | Install pip packages
       pip:
         name:
           - pyyaml
@@ -33,35 +33,15 @@
           - Pillow
         executable: pip3
 
-    - name: Enable the raspberry camera
-      become: true
+    - name: System setup | Enable the raspberry camera
       lineinfile:
         path: /boot/config.txt
         regexp: '^start_x'
         line: 'start_x=1'
       register: reboot_required
 
-    - name: "Clone BeholderPi GitHub repository"
-      git:
-        repo: https://github.com/MemDynLab/BeholderPi
-        dest: /home/pi/src/BeholderPi
-        update: yes
-      register: service_restart
-
-    - name: Create symbolic link
-      file:
-        src: "/home/pi/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
-        dest: "/etc/systemd/system/beholder_streaming.service"
-        state: link
-
-    - name: Enable streaming service
-      systemd:
-        name: beholder_streaming
-        enabled: yes
-      register: reboot_required
-
     # See https://raspberrypi.stackexchange.com/q/84390/6506
-    - name: Disable swap file
+    - name: System setup | Disable swap file
       shell: >
         dphys-swapfile swapoff &&
         dphys-swapfile uninstall &&
@@ -69,17 +49,48 @@
       when:
         - ansible_swaptotal_mb > 0
 
-    - name: "Reload Systemd config"
+    - name: Git setup | Create 'src' directory
+      become_user: pi
+      file:
+        path: /home/pi/src
+        state: directory
+
+    - name: Git setup | Clone BeholderPi GitHub repository
+      become_user: pi
+      git:
+        repo: https://github.com/MemDynLab/BeholderPi
+        dest: /home/pi/src/BeholderPi
+        update: yes
+      register: service_restart
+
+    - name: Git setup | Add influxpi as remote git repo
+      become_user: pi
+      command: git remote add influxpi ssh://10.0.0.1/home/pi/src/BeholderPi chdir=/home/pi/src/BeholderPi
+      ignore_errors: yes
+
+    - name: Beholder services | Create symbolic link
+      file:
+        src: "/home/pi/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
+        dest: "/etc/systemd/system/beholder_streaming.service"
+        state: link
+
+    - name: Beholder services | Enable streaming service
+      systemd:
+        name: beholder_streaming
+        enabled: yes
+      register: reboot_required
+
+    - name: Beholder services | Reload Systemd config
       systemd:
         daemon-reload: yes
       when: service_restart
 
-    - name: Populate service facts
+    - name: Beholder services | Populate service facts
       service_facts:
 #      - debug:
 #        var: ansible_facts.services
 
-    - name: "Restart discovery service"
+    - name: Beholder services | Restart discovery service
       systemd:
         name: beholder_discovery_sender
         state: restarted
@@ -87,7 +98,7 @@
       when: service_restart
       changed_when: False
 
-    - name: "Restart streaming service"
+    - name: Beholder services | Restart streaming service
       systemd:
         name: beholder_streaming
         state: restarted
@@ -95,54 +106,54 @@
       when: "'beholder_streaming.service' in services"
       changed_when: False
 
-    - name: Check if telegraf is running
+    - name: Telemetry | Check if telegraf is running
       systemd:
         name: telegraf
         state: started
       register: telegraf_install_required
       ignore_errors: True
 
-    - name: Install InfluxDB repository key
+    - name: Telemetry | Install InfluxDB repository key
       apt_key:
         url: https://repos.influxdata.com/influxdb.key
         state: present
       when: telegraf_install_required
 
-    - name: Add InfluxDB repository deb
+    - name: Telemetry | Add InfluxDB repository deb
       apt_repository:
         repo: deb https://repos.influxdata.com/debian stretch stable
         state: present
       when: telegraf_install_required
 
-    - name: Install telegraf
+    - name: Telemetry | Install telegraf
       apt:
         pkg: telegraf
         state: present
       when: telegraf_install_required
 
-    - name: Adding telegraf user to video group
+    - name: Telemetry | Adding telegraf user to video group
       user:
         name: telegraf
         groups: video
         append: yes
 
-    - name: Check for telegraf.conf symbolic link status
+    - name: Telemetry | Check for telegraf.conf symbolic link status
       stat: path=/etc/telegraf/telegraf.conf
       register: telegraf_conf_link
 #      - debug: msg="Link exists"
 #      when: telegraf_conf_link.stat.islnk is defined and telegraf_conf_link.stat.islnk
 
-    - name: Move exising telegraf configuration file
+    - name: Telemetry | Move exising telegraf configuration file
       command: mv /etc/telegraf/telegraf.conf /etc/telegraf/telegraf.bak
       when: telegraf_conf_link.stat.islnk is defined and not telegraf_conf_link.stat.islnk
 
-    - name: Create symbolic link
+    - name: Telemetry | Create symbolic telegraf.conf link from git repo
       file:
         src: "/home/pi/src/BeholderPi/piEye/resources/telegraf.conf"
         dest: "/etc/telegraf/telegraf.conf"
         state: link
 
-    - name: Set up influxdb credentials
+    - name: Telemetry | Set up influxdb credentials
       template:
         src: "templates/{{ item.template }}"
         dest: "{{ item.dest }}"
@@ -150,7 +161,7 @@
       with_items:
         - { template: default.telegraf.j2, dest: /etc/default/telegraf }
 
-    - name: Restart telegraf
+    - name: Telemetry | Restart telegraf
       systemd:
         name: telegraf
         state: restarted

@@ -9,16 +9,16 @@
     - ../vars.yml
 
   tasks:
-    - name: Set the current MAC address for eth0.
+    - name: Network | Set the current MAC address for eth0.
       set_fact:
         eye_mac_address: "{{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }}"
 
-    - name: Set variables based on eth0 MAC address.
+    - name: Network | Set variables based on eth0 MAC address.
       set_fact:
         eye_hostname: "{{ mac_address_mapping[eye_mac_address].name }}"
 #        eye_ip_address: "{{ mac_address_mapping[eye_mac_address].ip }}"
 
-    - name: Set up networking-related files.
+    - name: Network | Set up networking-related files.
       template:
         src: "templates/{{ item.template }}"
         dest: "{{ item.dest }}"
@@ -33,8 +33,14 @@
         - delete dhcp leases
         - reboot for net registration
 
+    - name: Network | Set up SSH configuration
+      template:
+        src: "templates/ssh_config.j2"
+        dest: /home/pi/.ssh/config
+        mode: 0644
+
   handlers:
-    - name: update hostname
+    - name: Network | update hostname
       command: "hostname {{ eye_hostname }}"
 
     - name: delete dhcp leases
@@ -45,7 +51,7 @@
         - /var/lib/dhcp/dhclient.leases
         - /var/lib/dhcpcd5/dhcpcd-eth0.lease
 
-    - name: Reboot with hostname update
+    - name: Network | Reboot with hostname update
       shell: "sleep 1 && reboot"
       async: 1
       poll: 0
