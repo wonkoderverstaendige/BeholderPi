@@ -20,6 +20,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s
 
 threading.current_thread().name = socket.gethostname()
 
+
 def get_local_ip():
     local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [
         [(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
@@ -47,6 +48,7 @@ class ZMQ_Output:
         # self.stream = io.BytesIO()
 
         self.last_write = time()
+        self.hostname = socket.gethostname()
 
     def write(self, buf):
         """Callback method invoked by the camera when a complete (encoded) frame arrives."""
@@ -56,7 +58,8 @@ class ZMQ_Output:
 
         # write frame annotation. Frame id is written by the GPU, only write temporal information
         if cfg['camera_annotate_metadata']:
-            self.camera.annotate_text = dt.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f') + ' @ ' + elapsed_str
+            self.camera.annotate_text = self.hostname + ' ' + dt.utcnow().strftime(
+                '%Y-%m-%d %H:%M:%S.%f') + ' @ ' + elapsed_str
 
         frame_index = self.camera.frame.index
 
