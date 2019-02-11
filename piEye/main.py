@@ -14,7 +14,7 @@ import numpy as np
 import picamera
 import zmq
 
-NUM_STREAMS = 4
+NUM_STREAMS = 1
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
 
@@ -34,6 +34,7 @@ class ZMQ_Output:
     def __init__(self, cfg, camera, context):
         self.camera = camera
         self.cfg = cfg
+        self.num_duplication = cfg['camera_stream_duplication'] if 'camera_stream_duplication' in cfg else NUM_STREAMS
 
         # ZMQ setup
         self.zmq_sockets = []
