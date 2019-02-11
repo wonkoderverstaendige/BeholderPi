@@ -1,7 +1,7 @@
 [beholder]
 10.0.0.11
 
-[influxpi]
+[spectator]
 10.0.0.1
 
 [eyes]
@@ -16,7 +16,7 @@
 
 [beholderpi:children]
 beholder
-influxpi
+spectator
 eyes
 new_eyes
 

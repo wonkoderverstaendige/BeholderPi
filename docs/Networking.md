@@ -6,7 +6,7 @@ After that we can switch to the local beholder.pi network.
 When connecting a freshly flashed raspberry, it will start broadcasting
 discovery packages.
 
-The `influxpi` raspberry is running the local DHCP and DNS servers on
+The `spectator` raspberry is running the local DHCP and DNS servers on
 10.0.0.1 and has a static IP reserved for the beholder (currently antigoon)
 at 10.0.0.11.
 

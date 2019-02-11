@@ -3,7 +3,7 @@
 ## Create custom Raspbian image
 
 To bootstrap network discovery and [Ansible](https://www.ansible.com/) access, a custom Raspbian
- image is generated with the bash script in `scripts/prepare_raspbian_piEye_image.bash`.
+ image is generated with the bash script in `scripts/prepare_raspbian_eyestalk_image.bash`.
  It copies files required for the initial services, enables ssh,
   copies ssh keys and sets default passwords.
 
@@ -16,11 +16,14 @@ To enable, an (empty) `ssh` file needs to be present in the `/boot` partition
 See this [blog post](https://kenfallon.com/safely-enabling-ssh-in-the-default-raspbian-image/)
 for details.
 
+Add beholderpi key to the known_known hosts of all devices, including
+*spectator* and *beholder*
+
 ### Network
-The influxpi raspberry acts as DNS and DCHP server for all hosts on the
+The *spectator* RaspberryPi acts as DNS and DCHP server for all hosts on the
 10.0.0.* network. It serves with the `dnsmasq` package.
 
-> TODO: Make a template of the influxpi `dhcpcd.conf` and `dnsmasq.conf`.
+> TODO: Make a template of the *spectator* `dhcpcd.conf` and `dnsmasq.conf`.
 
 - `apt install dnsmasq`
 
@@ -30,7 +33,7 @@ The influxpi raspberry acts as DNS and DCHP server for all hosts on the
 
 ### Network discovery
 
-To facilitate host discovery by the master Beholder instance
+To facilitate host discovery by the master *beholder* instance
 in an unknown network environment (external DHCP? static IPs?),
 the nodes run a systemd service broadcasting __UDP on port 50101__ with
 messages containing IP and hostname (`IP:hostname`, though IP is strictly

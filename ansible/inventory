@@ -1,7 +1,7 @@
 [beholder]
 131.175.140.26
 
-[influxpi]
+[spectator]
 10.0.0.1
 
 [eyes]
@@ -14,7 +14,7 @@
 
 [beholderpi:children]
 beholder
-influxpi
+spectator
 eyes
 
 [beholderpi:vars]

@@ -13,16 +13,15 @@
         update_cache: yes
         cache_valid_time: 86400
       ignore_errors: true
-#      failed_when: false
       no_log: true
 
-    - name: Git setup | Update from influxpi remote to check
+    - name: Git setup | Update from 'spectator' remote to check
       become_user: pi
       git:
-        repo: ssh://influxpi/home/pi/src/BeholderPi
+        repo: ssh://spectator/home/pi/src/BeholderPi
         update: yes
         dest: /home/pi/src/BeholderPi
-        remote: influxpi
+        remote: spectator
       register: service_restart
 
     - name: Reload Systemd config
@@ -42,6 +41,6 @@
       systemd:
         name: beholder_streaming
         state: restarted
-        no_block: yes
-      when: "'beholder_streaming.service' in services"
-      changed_when: False
+#        no_block: yes
+#      when: "'beholder_streaming.service' in services"
+#      changed_when: False
