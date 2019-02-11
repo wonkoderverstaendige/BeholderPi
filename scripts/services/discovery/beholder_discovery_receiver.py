@@ -59,8 +59,9 @@ def update_loop(stdscr, ev_stop, client_dict):
     columns = [('hostname', 'Hostname', 17),
                ('src_ip', 'Source IP', 18),
                # ('mac', 'MAC', 19),
-               ('tzdelta', 'Time delta', 10),
-               ('status', 'Status', 16)]
+               ('tzdelta', 'TDelta', 7),
+               ('last_seen', 'Seen', 7),
+               ('status', 'Status', 10)]
 
     frame_top = ' ┌' + '┬'.join(['─' * c[2] for c in columns]) + '┐\n'
     header_template = ' │' + '│'.join(['{: ^'+str(c[2])+'s}' for c in columns]) + '│\n'
@@ -122,7 +123,7 @@ def update_loop(stdscr, ev_stop, client_dict):
                     if col[0] == 'status':
                         stdscr.addstr('│ ', curses.color_pair(1))
                         status_color = status_color_map[status.lower()]
-                        al_str = '{: <5s} ({})'.format(status, t_str(delta))
+                        al_str = '{: <5s}'.format(status)
                         stdscr.addstr(al_str, curses.color_pair(status_color))
                         stdscr.addstr(' ' * (col[2] - 1 - len(al_str)) + '│\n', curses.color_pair(1))
                     else:
@@ -137,6 +138,8 @@ def update_loop(stdscr, ev_stop, client_dict):
                             if 'localtime' in host:
                                 t_diff = host['arrival'] - host['localtime']
                                 value = t_str(t_diff, ms=True)
+                        elif col[0] == 'last_seen':
+                            value = t_str(delta)
 
                         cell = '│ {: <' + str(col[2] - 1) + 's}'
                         stdscr.addstr(cell.format(str(value)), curses.color_pair(1))
