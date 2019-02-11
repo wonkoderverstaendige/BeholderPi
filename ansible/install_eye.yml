@@ -49,6 +49,36 @@
       when:
         - ansible_swaptotal_mb > 0
 
+###########################
+
+    - name: Time & NTP | Link Europe/Amsterdam time zone
+      file:
+        src: /usr/share/zoneinfo/Europe/Amsterdam
+        dest: /etc/localtime
+        state: link
+        force: true
+      register: tz_changed
+
+    - name: Time & NTP | Update time zone
+      command: dpkg-reconfigure --frontend noninteractive tzdata
+      when: tz_changed
+
+    - name: Time & NTP | Copy ntp configuration
+      template:
+        src: templates/timesycnd.conf.j2
+        dest: /etc/systemd/timesyncd.conf
+        mode: 0644
+
+    - name: Time & NTP | Enable ntp
+      command: timedatectl set-ntp true
+
+    - name: Time & NTP | Restart timedatectl service
+      systemd:
+        name: systemd-timesyncd
+        status: restarted
+
+###########################
+
     - name: Git setup | Create 'src' directory
       become_user: pi
       file:
@@ -63,10 +93,12 @@
         update: yes
       register: service_restart
 
-    - name: Git setup | Add influxpi as remote git repo
+    - name: Git setup | Add spectator as remote git repo
       become_user: pi
-      command: git remote add influxpi ssh://10.0.0.1/home/pi/src/BeholderPi chdir=/home/pi/src/BeholderPi
+      command: git remote add spectator ssh://10.0.0.1/home/pi/src/BeholderPi chdir=/home/pi/src/BeholderPi
       ignore_errors: yes
+
+###########################
 
     - name: Beholder services | Create symbolic link
       file:
@@ -143,7 +175,7 @@
 #      - debug: msg="Link exists"
 #      when: telegraf_conf_link.stat.islnk is defined and telegraf_conf_link.stat.islnk
 
-    - name: Telemetry | Move exising telegraf configuration file
+    - name: Telemetry | Link repo telegraf configuration file
       command: mv /etc/telegraf/telegraf.conf /etc/telegraf/telegraf.bak
       when: telegraf_conf_link.stat.islnk is defined and not telegraf_conf_link.stat.islnk
 
