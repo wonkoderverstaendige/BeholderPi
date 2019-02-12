@@ -14,6 +14,7 @@ FFMPEG_COMMAND = [FFMPEG_BINARY,
                   '-i', '-',
                   '-c:v', 'libx264',
                   '-preset', 'veryfast',
+                  '-vf', 'hqdn3d'
                   ]
 
 SOCKET_RECV_TIMEOUT = 1000
