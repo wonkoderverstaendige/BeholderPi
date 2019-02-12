@@ -7,7 +7,8 @@ Type=idle
 User=pi
 WorkingDirectory=/home/pi
 ExecStart=/usr/bin/python3 /home/pi/beholder_discovery_sender.py > /home/pi/beholder_discovery.log 2>&1
-Restart=on-failure
+Restart=always
+RestartSec=15
 
 [Install]
 WantedBy=multi-user.target
