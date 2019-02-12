@@ -51,12 +51,6 @@ def update_loop(stdscr, ev_stop, client_dict):
                         'lost': 4,
                         'fault': 5}
 
-    # frame_top = ' ┌' + '─' * 17 + '┬' + '─' * 18 + '┬' + '─' * 15 + '┐\n'
-    # table_header = ' │ {: ^15s} │ {: ^16s} │ {: ^13s} │\n'.format("Hostname", "IP", "STATUS")
-    # frame_top_lower = ' ├' + '─' * 17 + '┼' + '─' * 18 + '┼' + '─' * 15 + '┤\n'
-    # table_row = ' │ {: <15s} │ {: <16s} │ '
-    # frame_bottom = ' └' + '─' * 17 + '┴' + '─' * 18 + '┴' + '─' * 15 + '┘\n'
-
     columns = [('hostname', 'Hostname', 17),
                ('src_ip', 'Source IP', 18),
                # ('mac', 'MAC', 19),
@@ -83,18 +77,6 @@ def update_loop(stdscr, ev_stop, client_dict):
 
         except curses.error:
             pass
-        #
-        # # Process new packets
-        # while True:
-        #     try:
-        #         packet = packet_queue.get(timeout=.1)
-        #     except Empty:
-        #         break
-        #
-        #     if None in packet:
-        #         continue
-        #
-        #     client_dict[packet['src_ip']] = packet
 
         # Show current clients
         if stdscr is not None:
@@ -173,7 +155,6 @@ def process_packet(data):
 
 def t_str(s, precision='2.1', ms=False):
     """Turn time delta in seconds into short string across time scales."""
-    # TODO: Handle negative differences!
     fmt_str = '{: >' + precision + 'f}'
     if s < 1 and ms:
         return '{: >3.1f}'.format(s*1000) + ' ms'
@@ -229,12 +210,10 @@ def main(stdscr):
 
     with cls_server((HOST, PORT), cls_handler) as server:
         st = threading.Thread(target=server.serve_forever)
-        # st.daemon = True
         st.start()
 
         # Reporter thread
         rt = threading.Thread(target=update_loop, args=(stdscr, _STOP, Clients,))
-        # rt.daemon = True
         rt.start()
 
         while not _STOP.is_set():
