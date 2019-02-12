@@ -16,6 +16,7 @@ from queue import Queue, Empty
 import curses
 import time
 import json
+from math import fabs
 
 TYPE = 'UDP'
 HOST = ''
@@ -59,7 +60,7 @@ def update_loop(stdscr, ev_stop, client_dict):
     columns = [('hostname', 'Hostname', 17),
                ('src_ip', 'Source IP', 18),
                # ('mac', 'MAC', 19),
-               ('tzdelta', 'TDelta', 7),
+               ('tzdelta', 'Delta', 8),
                ('last_seen', 'Seen', 7),
                ('status', 'Status', 10)]
 
@@ -128,6 +129,7 @@ def update_loop(stdscr, ev_stop, client_dict):
                         stdscr.addstr(' ' * (col[2] - 1 - len(al_str)) + '│\n', curses.color_pair(1))
                     else:
                         value = ''
+                        cp = 1
                         if col[0] == 'mac' and col[0] in host:
                             value = host['mac']
                         elif col[0] == 'hostname':
@@ -137,12 +139,20 @@ def update_loop(stdscr, ev_stop, client_dict):
                         elif col[0] == 'tzdelta':
                             if 'localtime' in host:
                                 t_diff = host['arrival'] - host['localtime']
+                                if fabs(t_diff) < 1/1000:
+                                    cp = 2
+                                elif fabs(t_diff) < 3/1000:
+                                    cp = 3
+                                else:
+                                    cp = 4
                                 value = t_str(t_diff, ms=True)
+
                         elif col[0] == 'last_seen':
                             value = t_str(delta)
 
-                        cell = '│ {: <' + str(col[2] - 1) + 's}'
-                        stdscr.addstr(cell.format(str(value)), curses.color_pair(1))
+                        stdscr.addstr('│ ', curses.color_pair(1))
+                        cell = '{: <' + str(col[2] - 1) + 's}'
+                        stdscr.addstr(cell.format(str(value)), curses.color_pair(cp))
 
             stdscr.addstr(frame_bottom, curses.color_pair(1))
             stdscr.refresh()
@@ -167,22 +177,22 @@ def t_str(s, precision='2.1', ms=False):
     # TODO: Handle negative differences!
     fmt_str = '{: >' + precision + 'f}'
     if s < 1 and ms:
-        return '{: >3.0f}'.format(s*1000) + 'ms'
+        return '{: >3.1f}'.format(s*1000) + ' ms'
 
     if s < 60:
-        return fmt_str.format(s) + 's'
+        return fmt_str.format(s) + ' s'
 
     m = s / 60
     if m < 60:
-        return fmt_str.format(m) + 'm'
+        return fmt_str.format(m) + ' m'
 
     h = m / 60
     if h < 24:
-        return fmt_str.format(h) + 'h'
+        return fmt_str.format(h) + ' h'
 
     d = h / 24
     if d < 30:
-        return fmt_str.format(d) + 'd'
+        return fmt_str.format(d) + ' d'
 
     return 'Inf'
 
