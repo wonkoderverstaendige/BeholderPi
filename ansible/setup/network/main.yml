@@ -29,9 +29,9 @@
 #        - { template: resolv.conf.j2, dest: /etc/resolv.conf }  # overwritten in Stretch?
         - { template: dhcpcd.conf.j2, dest: /etc/dhcpcd.conf }
       notify:
-        - update hostname
-        - delete dhcp leases
-        - reboot for net registration
+        - Network | update hostname
+        - Network | Delete dhcp leases
+        - Network | Reboot with hostname update
 
     - name: Network | Set up SSH configuration
       template:
@@ -43,11 +43,12 @@
     - name: Network | update hostname
       command: "hostname {{ eye_hostname }}"
 
-    - name: delete dhcp leases
+    - name: Network | Delete dhcp leases
       file:
-        path: /var/lib/dhcp/dhclient.leases
+        path: "{{ item }}"
         state: absent
-      with_items:
+      loop:
+        - /var/lib/misc/dnsmasq.leases
         - /var/lib/dhcp/dhclient.leases
         - /var/lib/dhcpcd5/dhcpcd-eth0.lease
 

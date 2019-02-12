@@ -13,7 +13,7 @@
       apt:
         pkg:
           - vim
-          - ntp
+          - chrony
           - git
           - htop
           - byobu
@@ -50,6 +50,23 @@
         - ansible_swaptotal_mb > 0
 
 ###########################
+    - name: Time & NTP | Disable systemd-timesyncd service
+      systemd:
+        name: systemd-timesyncd
+        state: stopped
+        enabled: no
+
+    - name: Time & NTP | Copy chrony (ntp) configuration
+      template:
+        src: chrony.conf.j2
+        dest: /etc/chrony/chrony.conf
+        mode: 0644
+
+    - name: Time & NTP | Enable chrony service
+      systemd:
+        name: chrony
+        state: started
+        enabled: yes
 
     - name: Time & NTP | Link Europe/Amsterdam time zone
       file:
@@ -63,11 +80,11 @@
       command: dpkg-reconfigure --frontend noninteractive tzdata
       when: tz_changed
 
-    - name: Time & NTP | Copy ntp configuration
-      template:
-        src: templates/timesycnd.conf.j2
-        dest: /etc/systemd/timesyncd.conf
-        mode: 0644
+#    - name: Time & NTP | Copy ntp configuration
+#      template:
+#        src: timesyncd.conf.j2
+#        dest: /etc/systemd/timesyncd.conf
+#        mode: 0644
 
     - name: Time & NTP | Enable ntp
       command: timedatectl set-ntp true
@@ -75,7 +92,7 @@
     - name: Time & NTP | Restart timedatectl service
       systemd:
         name: systemd-timesyncd
-        status: restarted
+        state: restarted
 
 ###########################
 
@@ -168,12 +185,11 @@
         name: telegraf
         groups: video
         append: yes
+      register: reboot_required
 
     - name: Telemetry | Check for telegraf.conf symbolic link status
       stat: path=/etc/telegraf/telegraf.conf
       register: telegraf_conf_link
-#      - debug: msg="Link exists"
-#      when: telegraf_conf_link.stat.islnk is defined and telegraf_conf_link.stat.islnk
 
     - name: Telemetry | Link repo telegraf configuration file
       command: mv /etc/telegraf/telegraf.conf /etc/telegraf/telegraf.bak
@@ -198,14 +214,14 @@
         name: telegraf
         state: restarted
 
-    - name: Reboot immediately if there was a change
+    - name: Reboot if required
       shell: "sleep 3 && reboot"
       async: 1
       poll: 0
       when: reboot_required is changed
 
 
-    - name: Wait for the reboot to complete if there was a change
+    - name: Wait for the reboot to complete
       wait_for_connection:
         connect_timeout: 20
         sleep: 5
