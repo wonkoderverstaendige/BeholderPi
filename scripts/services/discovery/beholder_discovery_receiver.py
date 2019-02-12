@@ -112,12 +112,11 @@ def update_loop(stdscr, ev_stop, client_dict):
                     status = 'FAULT'
                 else:
                     hostname = host['hostname']
+                    status = 'LOST'
                     if delta < LIFESIGN_TIMEOUT:
-                        status = 'ALIVE'
-                    elif delta < LIFESIGN_LAG:
                         status = 'DELAY'
-                    else:
-                        status = 'LOST'
+                    if delta < LIFESIGN_LAG:
+                        status = 'ALIVE'
 
                 stdscr.addstr(' ', curses.color_pair(1))
                 for col in columns:
