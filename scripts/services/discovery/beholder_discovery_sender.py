@@ -36,6 +36,7 @@ def my_hostname():
 
 
 def gather_info():
+    # TODO: Gather MAC of primary interface, relevant for eye discovery
     info = {'ip': my_ip(),
             'hostname': my_hostname(),
             'mac': '00:00:00:00:00:00',
