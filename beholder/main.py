@@ -72,14 +72,14 @@ class Beholder:
                                  out_queue=self.write_queues[n],
                                  trigger_event=self.ev_stop,
                                  ctx=self.zmq_context,
-                                 idx=n) for n in range(len(self.sources))]
+                                 idx=n + 1) for n in range(len(self.sources))]
         # Video storage writers
         self.writers = [Writer(cfg=cfg,
                                in_queue=self.write_queues[n],
                                ev_alive=self.ev_stop,
                                ev_recording=self.ev_recording,
                                ev_trial_active=self.ev_trial_active,
-                               idx=n) for n in range(len(self.sources))]
+                               idx=n + 1) for n in range(len(self.sources))]
 
         # Start threads
         for n in range(len(self.sources)):
