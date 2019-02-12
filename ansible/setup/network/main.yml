@@ -1,6 +1,5 @@
 ---
 - hosts:
-    - eyes
     - new_eyes
 
   become: yes

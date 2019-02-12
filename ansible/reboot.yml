@@ -1,0 +1,12 @@
+---
+- hosts:
+  - eyes
+
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: Reboot
+      shell: "sleep 3 && reboot"
+      async: 1
+      poll: 0

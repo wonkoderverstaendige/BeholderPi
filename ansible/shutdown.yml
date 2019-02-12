@@ -1,0 +1,11 @@
+---
+- hosts:
+  - eyes
+
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: Shut-eye time!
+      command: shutdown now
+      ignore_errors: true

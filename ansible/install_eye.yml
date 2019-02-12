@@ -2,7 +2,45 @@
 - hosts: new_eyes
   remote_user: pi
   become: true
+  vars_files:
+    - vars.yml
+
   tasks:
+
+########################### NETWORK SETUP ###########################
+
+    - name: Network | Set the current MAC address for eth0.
+      set_fact:
+        eye_mac_address: "{{ hostvars[inventory_hostname].ansible_default_ipv4.macaddress }}"
+
+    - name: Network | Set variables based on eth0 MAC address.
+      set_fact:
+        eye_hostname: "{{ mac_address_mapping[eye_mac_address].name }}"
+#        eye_ip_address: "{{ mac_address_mapping[eye_mac_address].ip }}"
+
+    - name: Network | Set up networking-related files.
+      template:
+        src: "templates/{{ item.template }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      with_items:
+        - { template: hostname.j2, dest: /etc/hostname }
+        - { template: hosts.j2, dest: /etc/hosts }
+#        - { template: resolv.conf.j2, dest: /etc/resolv.conf }  # overwritten in Stretch?
+        - { template: dhcpcd.conf.j2, dest: /etc/dhcpcd.conf }
+      notify:
+        - Network | update hostname
+        - Network | Delete dhcp leases
+        - reboot
+
+    - name: Network | Set up SSH configuration
+      template:
+        src: "templates/ssh_config.j2"
+        dest: /home/pi/.ssh/config
+        mode: 0644
+
+########################### SYSTEM SETUP ###########################
+
     - name: System setup | Update all installed apt packages
       apt:
         upgrade: yes
@@ -38,7 +76,6 @@
         path: /boot/config.txt
         regexp: '^start_x'
         line: 'start_x=1'
-      register: reboot_required
 
     # See https://raspberrypi.stackexchange.com/q/84390/6506
     - name: System setup | Disable swap file
@@ -49,7 +86,8 @@
       when:
         - ansible_swaptotal_mb > 0
 
-###########################
+########################### NTP and TIME ###########################
+
     - name: Time & NTP | Disable systemd-timesyncd service
       systemd:
         name: systemd-timesyncd
@@ -80,12 +118,6 @@
       command: dpkg-reconfigure --frontend noninteractive tzdata
       when: tz_changed
 
-#    - name: Time & NTP | Copy ntp configuration
-#      template:
-#        src: timesyncd.conf.j2
-#        dest: /etc/systemd/timesyncd.conf
-#        mode: 0644
-
     - name: Time & NTP | Enable ntp
       command: timedatectl set-ntp true
 
@@ -94,7 +126,7 @@
         name: systemd-timesyncd
         state: restarted
 
-###########################
+########################### SOURCE/GIT ###########################
 
     - name: Git setup | Create 'src' directory
       become_user: pi
@@ -115,7 +147,7 @@
       command: git remote add spectator ssh://10.0.0.1/home/pi/src/BeholderPi chdir=/home/pi/src/BeholderPi
       ignore_errors: yes
 
-###########################
+########################### BEHOLDER SERVICES ###########################
 
     - name: Beholder services | Create symbolic link
       file:
@@ -123,37 +155,39 @@
         dest: "/etc/systemd/system/beholder_streaming.service"
         state: link
 
-    - name: Beholder services | Enable streaming service
-      systemd:
-        name: beholder_streaming
-        enabled: yes
-      register: reboot_required
-
     - name: Beholder services | Reload Systemd config
       systemd:
         daemon-reload: yes
-      when: service_restart
 
-    - name: Beholder services | Populate service facts
-      service_facts:
-#      - debug:
-#        var: ansible_facts.services
-
-    - name: Beholder services | Restart discovery service
-      systemd:
-        name: beholder_discovery_sender
-        state: restarted
-        no_block: yes
-      when: service_restart
-      changed_when: False
-
-    - name: Beholder services | Restart streaming service
+    - name: Beholder services | Streaming service
       systemd:
         name: beholder_streaming
+        enabled: yes
+        state: started
+
+    - name: Beholder services | Discovery service
+      systemd:
+        name: beholder_discovery_sender
+        enabled: yes
         state: restarted
-        no_block: yes
-      when: "'beholder_streaming.service' in services"
-      changed_when: False
+
+#        no_block: yes
+#      when: service_restart
+#      changed_when: False
+
+#    - name: Beholder services | Populate service facts
+#      service_facts:
+#      - debug:
+#        var: ansible_facts.services
+#    - name: Beholder services | Restart streaming service
+#      systemd:
+#        name: beholder_streaming
+#        state: restarted
+#        no_block: yes
+#      when: "'beholder_streaming.service' in services"
+#      changed_when: False
+
+########################### TELEMETRY ###########################
 
     - name: Telemetry | Check if telegraf is running
       systemd:
@@ -185,7 +219,6 @@
         name: telegraf
         groups: video
         append: yes
-      register: reboot_required
 
     - name: Telemetry | Check for telegraf.conf symbolic link status
       stat: path=/etc/telegraf/telegraf.conf
@@ -214,21 +247,39 @@
         name: telegraf
         state: restarted
 
-    - name: Reboot if required
+
+########################### HANDLERS ###########################
+
+  handlers:
+    - name: Network | update hostname
+      command: "hostname {{ eye_hostname }}"
+
+    - name: Network | Delete dhcp leases
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/misc/dnsmasq.leases
+        - /var/lib/dhcp/dhclient.leases
+        - /var/lib/dhcpcd5/dhcpcd-eth0.lease
+
+    - name: reboot
       shell: "sleep 3 && reboot"
       async: 1
       poll: 0
-      when: reboot_required is changed
+      notify: Wait for reboot
 
-
-    - name: Wait for the reboot to complete
+    - name: Wait for reboot
       wait_for_connection:
         connect_timeout: 20
         sleep: 5
         delay: 5
         timeout: 300
-      when: reboot_required is changed
 
+#    - name: Network | Reboot with hostname update
+#      shell: "sleep 1 && reboot"
+#      async: 1
+#      poll: 0
 
 #  #  roles:
 #  #  - update
