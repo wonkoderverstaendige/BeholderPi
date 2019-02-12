@@ -38,7 +38,7 @@ class ZMQ_Output:
 
         # ZMQ setup
         self.zmq_sockets = []
-        for n in range(NUM_STREAMS):
+        for n in range(self.num_duplication):
             sock = context.socket(zmq.PUB)
             target = 'tcp://*:{port:d}'.format(port=cfg['zmq_output_port'] + n)
             logging.debug('Binding socket at ' + target)
