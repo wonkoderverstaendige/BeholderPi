@@ -1,4 +1,18 @@
 ---
+#- hosts: spectator
+#  remote_user: pi
+#  become: true
+#
+#  tasks:
+#  - name: Git setup | Update from 'spectator' remote to check
+#    become_user: pi
+#    git:
+#      repo: ssh://beholder/home/pi/src/BeholderPi
+#      update: yes
+#      dest: /home/pi/src/BeholderPi
+#      remote: beholder
+#    register: service_restart
+
 - hosts: eyes
   remote_user: pi
   become: true

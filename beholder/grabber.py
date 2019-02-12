@@ -176,10 +176,11 @@ class Grabber(threading.Thread):
         # NOTE: [:] indicates to reuse the buffer
         try:
             # with self._shared_arr.get_lock():
-            self._fresh_frame[self.height * self.n_row:self.height * (self.n_row + 1),
-            self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame  # np.rot90(self.frame)
-        except ValueError:
-            logging.debug(('VE', self.n_col, self.n_row, self._fresh_frame.shape))
+            self._fresh_frame[
+                    self.height * self.n_row:self.height * (self.n_row + 1),
+                    self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame
+        except ValueError as e:
+            logging.debug(('VE', self.n_col, self.n_row, self._fresh_frame.shape, e))
             # logging.info('test')
             # self.embed_metadata(row=0, label='index', data=self.frame.index)
             # self.embed_metadata(row=1, label='tickst', data=self.frame.tickstamp)

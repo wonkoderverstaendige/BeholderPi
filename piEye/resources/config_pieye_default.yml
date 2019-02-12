@@ -7,8 +7,8 @@ camera_framerate: 30.
 camera_exposure_mode: 'sports'
 
 # Frame resize. Note that frame dimensions must take rotation into account
-frame_width: 800
-frame_height: 600
+frame_width: 600
+frame_height: 800
 
 # Preview
 camera_preview_enable: true

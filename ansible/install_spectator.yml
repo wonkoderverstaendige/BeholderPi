@@ -2,7 +2,9 @@
 - hosts: spectator
   remote_user: pi
   become: true
-  roles:
-  - update
-  - telegrafer
-  - spectator
+
+
+#  roles:
+#  - update
+#  - telegrafer
+#  - spectator
