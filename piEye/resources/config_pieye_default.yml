@@ -23,7 +23,7 @@ camera_recording_format: 'mjpeg'
 
 # Misc
 zmq_output_port: 5555
-camera_stream_duplication: 1
+camera_stream_duplication: 2
 
 # Debug
 debug_drop_nth_frame: 10000
