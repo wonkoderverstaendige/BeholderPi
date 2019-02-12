@@ -7,8 +7,8 @@ camera_framerate: 30.
 camera_exposure_mode: 'sports'
 
 # Frame resize. Note that frame dimensions must take rotation into account
-frame_width: 480
-frame_height: 640
+frame_width: 800
+frame_height: 600
 
 # Preview
 camera_preview_enable: true
@@ -23,7 +23,7 @@ camera_recording_format: 'mjpeg'
 
 # Misc
 zmq_output_port: 5555
-camera_stream_duplication: 2
+camera_stream_duplication: 1
 
 # Debug
 debug_drop_nth_frame: 10000
