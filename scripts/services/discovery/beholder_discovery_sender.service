@@ -9,6 +9,7 @@ WorkingDirectory=/home/pi
 ExecStart=/usr/bin/python3 /home/pi/beholder_discovery_sender.py > /home/pi/beholder_discovery.log 2>&1
 Restart=always
 RestartSec=15
+StartLimitIntervalSec=0
 
 [Install]
 WantedBy=multi-user.target
