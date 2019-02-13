@@ -1,6 +1,6 @@
 # Shape of the camera feeds
-frame_width: 720
-frame_height: 960
+frame_width: 600
+frame_height: 800
 frame_colors: 3
 frame_fps: 30.
 
