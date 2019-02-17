@@ -13,8 +13,8 @@ frame_height: 800
 # Preview
 camera_preview_enable: true
 camera_preview_alpha: 200
-camera_annotate_metadata: false
-camera_annotate_frame_num: false
+camera_annotate_metadata: true
+camera_annotate_frame_num: true
 camera_annotate_text_size: 16
 camera_annotate_bg_color: 'black'
 
