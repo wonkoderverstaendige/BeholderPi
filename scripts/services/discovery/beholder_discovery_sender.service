@@ -10,6 +10,7 @@ ExecStart=/usr/bin/python3 /home/pi/beholder_discovery_sender.py > /home/pi/beho
 Restart=always
 RestartSec=15
 StartLimitIntervalSec=0
+StartLimitBurst=0
 
 [Install]
 WantedBy=multi-user.target
