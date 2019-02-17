@@ -49,6 +49,9 @@ class Grabber(threading.Thread):
         # shape = (self.height + FRAME_METADATA_H, self.width, self.colors)
         # num_bytes = int(np.prod(shape))
 
+        self.fault_frame = cv2.resize(FAULTY_FRAME, (self.width, self.height))
+        self.no_signal_frame = cv2.resize(NO_SIGNAL_FRAME, (self.width, self.height))
+
         # Attach to shared buffer
         with arr.get_lock():
             self._shared_arr = arr
@@ -89,7 +92,7 @@ class Grabber(threading.Thread):
                     self.timed_out = True
                     logging.info('Frame source timeout!')
                 # TODO: Fault frames as JPG, so they can be handed over to the writer directly?
-                self.frame = NO_SIGNAL_FRAME
+                self.frame = self.no_signal_frame
 
             else:
                 # Source reconnected
@@ -127,7 +130,7 @@ class Grabber(threading.Thread):
 
             # If no valid frame was decoded even though we did receive something, show a warning
             if self.frame is None:
-                self.frame = FAULTY_FRAME
+                self.frame = self.fault_frame
 
             # # Make space for the metadata bar at the bottom of each frame
             # frame.resize((frame.shape[0] + FRAME_METADATA_H, frame.shape[1], frame.shape[2]))

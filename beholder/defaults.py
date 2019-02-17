@@ -13,6 +13,7 @@ FFMPEG_COMMAND = [FFMPEG_BINARY,
                   '-r', '30.',
                   '-i', '-',
                   '-c:v', 'libx264',
+                  # '-c:v', 'copy',
                   '-preset', 'veryfast',
                   '-vf', 'hqdn3d'
                   ]
