@@ -12,6 +12,35 @@
 #      dest: /home/pi/src/BeholderPi
 #      remote: beholder
 #    register: service_restart
+- hosts: spectator
+  remote_user: pi
+  become: true
+
+  tasks:
+    - name: Update all installed apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400
+      ignore_errors: true
+      no_log: true
+
+    - name: Git setup | Update from 'beholder' remote
+      become_user: pi
+      git:
+        repo: ssh://beholder/home/reichler/src/BeholderPi
+        update: yes
+        dest: /home/pi/src/BeholderPi
+        remote: beholder
+      notify: Restart discovery service
+
+  handlers:
+    - name: Restart discovery service
+      systemd:
+        name: beholder_discovery_sender
+        state: restarted
+        no_block: yes
+      changed_when: False
 
 - hosts: eyes
   remote_user: pi
@@ -37,24 +66,23 @@
         dest: /home/pi/src/BeholderPi
         remote: spectator
       register: service_restart
+      notify: Restart discovery service
 
     - name: Reload Systemd config
       systemd:
         daemon-reload: yes
       when: service_restart
 
+    - name: Restart streaming service
+      systemd:
+        name: beholder_streaming
+        state: restarted
+      when: service_restart
+
+  handlers:
     - name: Restart discovery service
       systemd:
         name: beholder_discovery_sender
         state: restarted
         no_block: yes
-      when: service_restart
       changed_when: False
-
-    - name: Restart streaming service
-      systemd:
-        name: beholder_streaming
-        state: restarted
-#        no_block: yes
-#      when: "'beholder_streaming.service' in services"
-#      changed_when: False
