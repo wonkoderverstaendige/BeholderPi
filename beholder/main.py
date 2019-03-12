@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-import math
+
 import pkg_resources
-from time import time
-import subprocess as sp
-from datetime import datetime as dt
 
 import ctypes
 import logging
@@ -13,7 +10,6 @@ from collections import deque
 import threading
 import yaml
 
-from halo import Halo
 import numpy as np
 import zmq
 import cv2
