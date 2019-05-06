@@ -1,5 +1,5 @@
 ---
-- hosts: new_eyes
+- hosts: new_eyes, eyes
   remote_user: pi
   become: true
   vars_files:
@@ -61,6 +61,7 @@
           - python3-apt
           - python-setuptools  # workaround for ansible checking setuptools of the wrong python version!
           - libzbar0
+          - influxdb
         state: present
 
     - name: System setup | Install pip packages

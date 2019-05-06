@@ -1,0 +1,4 @@
+- ssh configuration spectator
+- git confiiguration spectator
+- chrony configuration spectator
+- opencv installation (requires gtk-3-dev package? Ugh!)
