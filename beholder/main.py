@@ -113,7 +113,7 @@ class Beholder:
             self.stop()
 
     def process_events(self):
-        key = cv2.waitKey(5)
+        key = cv2.waitKey(30)
 
         if key == ord('q'):
             self.stop()
