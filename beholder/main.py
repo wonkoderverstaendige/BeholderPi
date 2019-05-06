@@ -97,11 +97,12 @@ class Beholder:
                 if self.paused:
                     pass
                 else:
-                    with self._shared_arr.get_lock():
-                        # Copy shared frame content into display buffer
-                        self.disp_frame[:] = self.frame
+                    pass
+                    # with self._shared_arr.get_lock():
+                    #     # Copy shared frame content into display buffer
+                    #     self.disp_frame[:] = self.frame
 
-                cv2.imshow('Beholder', self.disp_frame)
+                cv2.imshow('Beholder', self.frame)  # instead of self.disp_frame
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
                 self._loop_times.appendleft(elapsed)
@@ -128,10 +129,10 @@ class Beholder:
                 print('unsetting record flag')
                 self.ev_recording.clear()
 
-        # # Detect if close button of was pressed.
-        # # May not be reliable on all platforms/GUI backends
-        # if cv2.getWindowProperty('Beholder', cv2.WND_PROP_AUTOSIZE) < 1:
-        #     self.stop()
+        # Detect if close button of was pressed.
+        # May not be reliable on all platforms/GUI backends
+        if cv2.getWindowProperty('Beholder', cv2.WND_PROP_AUTOSIZE) < 1:
+            self.stop()
 
     def stop(self):
         self.ev_stop.set()
