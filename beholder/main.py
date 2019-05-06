@@ -139,12 +139,14 @@ class Beholder:
 
         # Shut down Grabbers
         for grabber in self.grabbers:
-            grabber.join()
+            if grabber.is_alive():
+                grabber.join()
         logging.debug('All Grabbers joined!')
 
         # Shut down Writers
         for writer in self.writers:
-            writer.join()
+            if writer.is_alive():
+                writer.join()
         logging.debug('All Writers joined!')
 #
 # def main(grabbers):
