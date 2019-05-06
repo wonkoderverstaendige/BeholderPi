@@ -59,7 +59,7 @@ class Beholder:
         # self.paused_frame = np.zeros_like(self.frame)
 
         # Frame queues for video file output
-        self.write_queues = [Queue(maxsize=16) for _ in range(len(self.sources))]
+        self.write_queues = [Queue(maxsize=150) for _ in range(len(self.sources))]
 
         # Grabber objects
         self.grabbers = [Grabber(cfg=self.cfg,
