@@ -19,7 +19,7 @@ FAULTY_FRAME = np.rot90(cv2.imread(no_signal_path))
 
 
 class Grabber(threading.Thread):
-    def __init__(self, cfg, ctx, arr, target, out_queue, trigger_event, idx=0):
+    def __init__(self, cfg, ctx, arr, target, out_queue, trigger_event, idx=0, transpose=False):
         super().__init__()
         self.id = idx
         self.cfg = cfg
@@ -45,6 +45,8 @@ class Grabber(threading.Thread):
 
         self.n_row = self.id // cfg['n_cols']
         self.n_col = self.id % cfg['n_cols']
+
+        self.transpose = transpose
 
         # shape = (self.height + FRAME_METADATA_H, self.width, self.colors)
         # num_bytes = int(np.prod(shape))
@@ -102,25 +104,31 @@ class Grabber(threading.Thread):
                 for socket, N in messages:
                     encoded_frame = socket.recv()
                     self.frame = cv2.imdecode(np.fromstring(encoded_frame[13:], dtype='uint8'), cv2.IMREAD_UNCHANGED)
-                    idx = int(np.fromstring(encoded_frame[5:13], dtype='uint64'))
+
+                    # For cameras of the bottom row we fliplr/flipud them in the sensor firmware to have the time stamp
+                    # on the outside of the frame. We need to reverse that now.
+                    if self.transpose:
+                        self.frame = np.flip(self.frame, (0, 1))
+
+                    frame_idx = int(np.fromstring(encoded_frame[5:13], dtype='uint64'))
 
                     # Look at current and previous frame index, check for shenanigans
-                    if None not in [idx, self.last_frame_idx]:
-                        delta = idx - self.last_frame_idx
+                    if None not in [frame_idx, self.last_frame_idx]:
+                        delta = frame_idx - self.last_frame_idx
                         if delta < 0:
                             logging.warning('Frame source restart? prev: {}, curr: {}, delta: {}'.format(
                                 self.last_frame_idx,
-                                idx, delta - 1))
+                                frame_idx, delta - 1))
                         elif delta > 1:
                             if delta == 2 and not (self.last_frame_idx + 1) % 10000:
                                 logging.debug('Intentional frame skip')
                             else:
                                 logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
                                     self.last_frame_idx,
-                                    idx, delta - 1))
+                                    frame_idx, delta - 1))
 
                     # Store current frame index
-                    self.last_frame_idx = idx
+                    self.last_frame_idx = frame_idx
 
                     if self._write_queue is not None:
                         try:
