@@ -2,42 +2,61 @@
 # MAC to hostname mapping
 mac_address_mapping:
 
-  "b8:27:eb:80:eb:8c":
+  # Top Row
+  # View 01
+  "b8:27:eb:79:ba:7f":
     name: eye01
 
-  "b8:27:eb:b3:a5:3f":
+  # View 02
+  "b8:27:eb:4e:68:96":
     name: eye02
 
-  "b8:27:eb:36:24:1a":
+  # View 03
+  "b8:27:eb:bc:2a:e8":
     name: eye03
 
-  "b8:27:eb:79:ba:7f":
+  # View 04
+  #"b8:27:eb:cc:ba:8c":
+  "b8:27:eb:5e:65:1f":
     name: eye04
 
-  "b8:27:eb:1d:c7:ce":
+  # View 05
+  "b8:27:eb:67:f4:a0":
     name: eye05
 
-  "b8:27:eb:a1:14:36":
+  # View 06
+  "b8:27:eb:89:9d:fd":
     name: eye06
 
-  "b8:27:eb:4e:68:96":
+  # Bottom Row
+  # View 07
+  "b8:27:eb:1d:c7:ce":
     name: eye07
 
-  "b8:27:eb:89:9d:fd":
+  # View 08
+  "b8:27:eb:a1:14:36":
     name: eye08
 
-  "b8:27:eb:bc:2a:e8":
+  # View 09
+  "b8:27:eb:36:24:1a":
     name: eye09
 
-  "b8:27:eb:67:f4:a0":
+  # ??
+  # View 10
+  "b8:27:eb:80:eb:8c":
     name: eye10
 
-  "b8:27:eb:31:98:6a":
+  # View 11
+  #"b8:27:eb:b3:a5:3f":
+  "b8:27:eb:cc:ba:8c":
     name: eye11
 
-  "b8:27:eb:cc:ba:8c":
+  # View 12
+  "b8:27:eb:31:98:6a":
     name: eye12
 
+
+  ## TESTING
   "b8:27:eb:9f:ab:2a":
     name: eye13
 
