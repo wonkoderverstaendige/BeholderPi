@@ -28,7 +28,7 @@
     - name: Git setup | Update from 'beholder' remote
       become_user: pi
       git:
-        repo: ssh://beholder/home/reichler/src/BeholderPi
+        repo: ssh://beholder/home/mdadmin/src/BeholderPi
         update: yes
         dest: /home/pi/src/BeholderPi
         remote: beholder
