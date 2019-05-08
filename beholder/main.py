@@ -9,6 +9,7 @@ from queue import Queue
 from collections import deque
 import threading
 import yaml
+from math import sqrt
 
 import numpy as np
 import zmq
@@ -22,6 +23,10 @@ from beholder.defaults import *
 SHARED_ARR = None
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+
+def euclidean_distance(p1, p2):
+    return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 
 class Beholder:
@@ -56,6 +61,8 @@ class Beholder:
 
         self.disp_frame = np.zeros(self.frame.shape, dtype=np.uint8)
 
+        self.measure_points = [None, None]
+
         # self.paused_frame = np.zeros_like(self.frame)
 
         # Frame queues for video file output
@@ -83,6 +90,8 @@ class Beholder:
             self.writers[n].start()
 
         cv2.namedWindow('Beholder', cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback("Beholder", self.process_mouse)
+
         logging.debug('Beholder initialization done!')
         self.paused = False
 
@@ -102,6 +111,7 @@ class Beholder:
                     #     # Copy shared frame content into display buffer
                     #     self.disp_frame[:] = self.frame
 
+                self.annotate_frame()
                 cv2.imshow('Beholder', self.frame)  # instead of self.disp_frame
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
@@ -112,6 +122,11 @@ class Beholder:
 
         except KeyboardInterrupt:
             self.stop()
+
+    def annotate_frame(self):
+        if None not in self.measure_points:
+            p1, p2 = self.measure_points
+            cv2.line(self.frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
 
     def process_events(self):
         key = cv2.waitKey(30)
@@ -133,6 +148,18 @@ class Beholder:
         # May not be reliable on all platforms/GUI backends
         if cv2.getWindowProperty('Beholder', cv2.WND_PROP_AUTOSIZE) < 1:
             self.stop()
+
+    def process_mouse(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN and flags:
+            self.measure_points[0] = (x, y)
+            self.measure_points[1] = None
+
+        elif event == cv2.EVENT_LBUTTONUP:
+            self.measure_points[1] = (x, y)
+            logging.info('Distance: {:.1f} px'.format(euclidean_distance(*self.measure_points)))
+
+        elif event == cv2.EVENT_LBUTTONDBLCLK:
+            self.measure_points = [None, None]
 
     def stop(self):
         self.ev_stop.set()
