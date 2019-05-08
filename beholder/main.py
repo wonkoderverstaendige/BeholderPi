@@ -156,7 +156,11 @@ class Beholder:
 
         elif event == cv2.EVENT_LBUTTONUP:
             self.measure_points[1] = (x, y)
-            logging.info('Distance: {:.1f} px'.format(euclidean_distance(*self.measure_points)))
+            p1, p2 = self.measure_points
+            distance = euclidean_distance(p1, p2)
+            dx = abs(p1[0] - p2[0])
+            dy = abs(p1[1] - p2[1])
+            logging.info(f'({p1}; {p2}), distance: {distance:.1f} px, dx: {dx}, dy: {dy}')
 
         elif event == cv2.EVENT_LBUTTONDBLCLK:
             self.measure_points = [None, None]
