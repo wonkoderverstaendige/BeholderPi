@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s
 
 
 def euclidean_distance(p1, p2):
-    return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
+    return sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
 class Beholder:
@@ -160,7 +160,9 @@ class Beholder:
             distance = euclidean_distance(p1, p2)
             dx = abs(p1[0] - p2[0])
             dy = abs(p1[1] - p2[1])
-            logging.info(f'({p1}; {p2}), distance: {distance:.1f} px, dx: {dx}, dy: {dy}')
+            two_m_cal = 0 if distance == 0 else 2000 / distance
+            logging.info(
+                f'({p1}; {p2}), distance: {distance:.1f} px, dx: {dx}, dy: {dy}, [@2m profile: {two_m_cal:.2f} px/mm]')
 
         elif event == cv2.EVENT_LBUTTONDBLCLK:
             self.measure_points = [None, None]
@@ -180,6 +182,8 @@ class Beholder:
             if writer.is_alive():
                 writer.join()
         logging.debug('All Writers joined!')
+
+
 #
 # def main(grabbers):
 #     # debug timing information
@@ -240,4 +244,3 @@ if __name__ == '__main__':
 
     beholder = Beholder(cfg=cfg, shared_arr=SHARED_ARR)
     beholder.loop()
-
