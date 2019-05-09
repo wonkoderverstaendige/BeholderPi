@@ -63,8 +63,6 @@ class Beholder:
 
         self.measure_points = [None, None]
 
-        self.calibration_aid = True
-
         # self.paused_frame = np.zeros_like(self.frame)
 
         # Frame queues for video file output
@@ -129,26 +127,6 @@ class Beholder:
         if None not in self.measure_points:
             p1, p2 = self.measure_points
             cv2.line(self.frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-
-        if self.calibration_aid:
-            for row in range(self.n_rows):
-                for col in range(self.n_cols):
-                    # draw centering lines
-                    dx = col * 600
-                    dy = row * 800
-
-                    # vertical lines
-                    cv2.line(self.frame, (dx + 300, dy + 350), (dx + 300, dy + 390), (255, 255, 255), thickness=3)
-                    cv2.line(self.frame, (dx + 300, dy + 410), (dx + 300, dy + 450), (255, 255, 255), thickness=3)
-
-                    # horizontal lines
-                    cv2.line(self.frame, (dx + 240, dy + 400), (dx + 290, dy + 400), (255, 255, 255), thickness=3)
-                    cv2.line(self.frame, (dx + 310, dy + 400), (dx + 350, dy + 400), (255, 255, 255), thickness=3)
-
-                    # cv2.line(self.frame, (dx, dy), (dx + 600, dy + 800), (255, 255, 255), thickness=1)
-                    # cv2.line(self.frame, (dx, dy + 800), (dx + 600, dy), (255, 255, 255), thickness=1)
-                    # cv2.line(self.frame, (dx + 300, dy + 410), (dx + 300, dy + 450), (255, 255, 255), thickness=1)
-
 
     def process_events(self):
         key = cv2.waitKey(30)

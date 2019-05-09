@@ -185,6 +185,19 @@ class Grabber(threading.Thread):
 
         # Forward frame for tracking and display
         # NOTE: [:] indicates to reuse the buffer
+
+        # vertical lines
+        cv2.line(self.frame, (300, 350), (300, 390), (255, 255, 255), thickness=3)
+        cv2.line(self.frame, (300, 410), (300, 450), (255, 255, 255), thickness=3)
+
+        # horizontal lines
+        cv2.line(self.frame, (250, 400), (290, 400), (255, 255, 255), thickness=3)
+        cv2.line(self.frame, (310, 400), (350, 400), (255, 255, 255), thickness=3)
+
+        # cv2.line(self.frame, (dx, dy), (dx + 600, dy + 800), (255, 255, 255), thickness=1)
+        # cv2.line(self.frame, (dx, dy + 800), (dx + 600, dy), (255, 255, 255), thickness=1)
+        # cv2.line(self.frame, (dx + 300, dy + 410), (dx + 300, dy + 450), (255, 255, 255), thickness=1)
+
         try:
             # with self._shared_arr.get_lock():
             self._fresh_frame[
