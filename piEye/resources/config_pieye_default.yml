@@ -29,5 +29,5 @@ zmq_output_port: 5555
 zmq_topic_video: piEye
 
 # Debug options
-debug_drop_nth_frame: 0
+debug_drop_nth_frame: false
 camera_stream_duplication: 1
