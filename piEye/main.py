@@ -15,7 +15,6 @@ import picamera
 import zmq
 
 NUM_STREAMS = 1
-FRAME_TOPIC = b'piEye'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
 
@@ -32,9 +31,10 @@ def get_local_ip():
 class ZMQ_Output:
     """Module for picamera to dump frame buffer into. Sends the encoded frames via ZMQ PUBLISHER."""
 
-    def __init__(self, cfg, camera, context):
+    def __init__(self, cfg, camera, context, zmq_topic):
         self.camera = camera
         self.cfg = cfg
+        self.zmq_topic = zmq_topic.encode()
         self.num_duplication = cfg['camera_stream_duplication'] if 'camera_stream_duplication' in cfg else NUM_STREAMS
 
         # ZMQ setup
@@ -77,7 +77,7 @@ class ZMQ_Output:
         idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
         # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
-        buf_str = FRAME_TOPIC + idx + buf
+        buf_str = self.zmq_topic + idx + buf
 
         # Actually send the buffer to the zmq socket
         #
@@ -91,7 +91,8 @@ class ZMQ_Output:
 
 def main(cfg):
     hostname = socket.gethostname()
-    logging.info('Starting host {} @ {}'.format(hostname, get_local_ip()))
+    zmq_topic = cfg['zmq_topic_video']
+    logging.info('Starting host {} @ {} with topic {}'.format(hostname, get_local_ip(), zmq_topic))
 
     with picamera.PiCamera(sensor_mode=cfg['camera_sensor_mode']) as camera, \
             zmq.Context() as context:
@@ -118,7 +119,7 @@ def main(cfg):
             camera.start_preview()
 
         # The capture handling module.
-        output = ZMQ_Output(cfg, camera, context)
+        output = ZMQ_Output(cfg, camera, context, zmq_topic=zmq_topic)
 
         # Recording loop
         #
