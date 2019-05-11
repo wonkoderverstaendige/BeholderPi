@@ -22,8 +22,11 @@ TYPE = 'UDP'
 HOST = ''
 PORT = 50101
 
-LIFESIGN_LAG = 3
-LIFESIGN_TIMEOUT = 5
+TIMEDELTA_OK = 1 / 1000  # ms
+TIMEDELTA_LAG = 3 / 1000  # ms
+
+LIFESIGN_LAG = 3  # s
+LIFESIGN_TIMEOUT = 5  # s
 
 
 _STOP = threading.Event()
@@ -54,7 +57,7 @@ def update_loop(stdscr, ev_stop, client_dict):
     columns = [('hostname', 'Hostname', 17),
                ('src_ip', 'Source IP', 18),
                # ('mac', 'MAC', 19),
-               ('tzdelta', 'Delta', 8),
+               ('tzdelta', 'Delta', 9),
                ('last_seen', 'Seen', 7),
                ('status', 'Status', 10)]
 
@@ -120,13 +123,14 @@ def update_loop(stdscr, ev_stop, client_dict):
                         elif col[0] == 'tzdelta':
                             if 'localtime' in host:
                                 t_diff = host['arrival'] - host['localtime']
-                                if fabs(t_diff) < 1/1000:
-                                    cp = 2
-                                elif fabs(t_diff) < 3/1000:
-                                    cp = 3
-                                else:
-                                    cp = 4
-                                value = t_str(t_diff, ms=True)
+                                if status != 'LOST':
+                                    if fabs(t_diff) < TIMEDELTA_OK:
+                                        cp = 2
+                                    elif fabs(t_diff) < TIMEDELTA_LAG:
+                                        cp = 3
+                                    else:
+                                        cp = 4
+                                    value = t_str(t_diff, ms=True)
 
                         elif col[0] == 'last_seen':
                             value = t_str(delta)

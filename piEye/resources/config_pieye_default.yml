@@ -1,17 +1,20 @@
 # Camera configuration
 camera_sensor_mode: 4
 camera_rotation: 90
-camera_vflip: false
-camera_hflip: false
 camera_framerate: 30.
 camera_exposure_mode: 'sports'
+
+# Image flip
+# the bottom row of images has to flip to pu the timestamp field outside of the maze
+camera_vflip: [6, 7, 8, 9, 10, 11]
+camera_hflip: [6, 7, 8, 9, 10, 11]
 
 # Frame resize. Note that frame dimensions must take rotation into account
 frame_width: 600
 frame_height: 800
 
 # Preview
-camera_preview_enable: true
+camera_preview_enable: false
 camera_preview_alpha: 200
 camera_annotate_metadata: true
 camera_annotate_frame_num: true
@@ -21,10 +24,9 @@ camera_annotate_bg_color: 'black'
 # Capture
 camera_recording_format: 'mjpeg'
 
-# Misc
+# Connection
 zmq_output_port: 5555
+
+# Debug options
+debug_drop_nth_frame: 0
 camera_stream_duplication: 1
-
-# Debug
-debug_drop_nth_frame: 10000
-
