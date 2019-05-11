@@ -6,8 +6,8 @@ camera_exposure_mode: 'sports'
 
 # Image flip
 # the bottom row of images has to flip to pu the timestamp field outside of the maze
-camera_vflip: [6, 7, 8, 9, 10, 11]
-camera_hflip: [6, 7, 8, 9, 10, 11]
+camera_vflip: ['piEye07', 'piEye08', 'piEye09', 'piEye10', 'piEye11', 'piEye12']
+camera_hflip: ['piEye07', 'piEye08', 'piEye09', 'piEye10', 'piEye11', 'piEye12']
 
 # Frame resize. Note that frame dimensions must take rotation into account
 frame_width: 600

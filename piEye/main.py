@@ -15,6 +15,7 @@ import picamera
 import zmq
 
 NUM_STREAMS = 1
+FRAME_TOPIC = b'piEye'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
 
@@ -76,7 +77,7 @@ class ZMQ_Output:
         idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
         # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
-        buf_str = b'piEye' + idx + buf
+        buf_str = FRAME_TOPIC + idx + buf
 
         # Actually send the buffer to the zmq socket
         #
@@ -89,7 +90,8 @@ class ZMQ_Output:
 
 
 def main(cfg):
-    logging.info('Starting piEye @ {}'.format(get_local_ip()))
+    hostname = socket.gethostname()
+    logging.info('Starting host {} @ {}'.format(hostname, get_local_ip()))
 
     with picamera.PiCamera(sensor_mode=cfg['camera_sensor_mode']) as camera, \
             zmq.Context() as context:
@@ -105,8 +107,8 @@ def main(cfg):
         camera._preview_alpha = cfg['camera_preview_alpha']
         camera.framerate = cfg['camera_framerate']
         camera.exposure_mode = cfg['camera_exposure_mode']
-        camera.vflip = cfg['camera_vflip']
-        camera.hflip = cfg['camera_hflip']
+        camera.vflip = hostname in cfg['camera_vflip']
+        camera.hflip = hostname in cfg['camera_hflip']
         camera.annotate_background = picamera.Color(cfg['camera_annotate_bg_color'])
         camera.annotate_frame_num = cfg['camera_annotate_frame_num']
         camera.annotate_text_size = cfg['camera_annotate_text_size']
