@@ -5,7 +5,7 @@
   become: yes
 
   vars_files:
-    - ../vars.yml
+    - ../vars_eyes.yml
 
   tasks:
     - name: Network | Set the current MAC address for eth0.

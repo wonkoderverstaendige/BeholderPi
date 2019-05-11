@@ -3,7 +3,7 @@
   remote_user: pi
   become: true
   vars_files:
-    - vars.yml
+    - vars_eyes.yml
 
   tasks:
 
@@ -16,7 +16,6 @@
     - name: Network | Set variables based on eth0 MAC address.
       set_fact:
         eye_hostname: "{{ mac_address_mapping[eye_mac_address].name }}"
-#        eye_ip_address: "{{ mac_address_mapping[eye_mac_address].ip }}"
 
     - name: Network | Set up networking-related files.
       template:
@@ -26,7 +25,6 @@
       with_items:
         - { template: hostname.j2, dest: /etc/hostname }
         - { template: hosts.j2, dest: /etc/hosts }
-#        - { template: resolv.conf.j2, dest: /etc/resolv.conf }  # overwritten in Stretch?
         - { template: dhcpcd.conf.j2, dest: /etc/dhcpcd.conf }
       notify:
         - Network | update hostname
@@ -96,6 +94,14 @@
         name: systemd-timesyncd
         state: stopped
         enabled: no
+        masked: yes
+
+    - name: Time & NTP | Disable openntp service
+      systemd:
+        name: openntp
+        state: stopped
+        enabled: no
+        masked: yes
 
     - name: Time & NTP | Copy chrony (ntp) configuration
       template:
@@ -121,13 +127,13 @@
       command: dpkg-reconfigure --frontend noninteractive tzdata
       when: tz_changed
 
-    - name: Time & NTP | Enable ntp
-      command: timedatectl set-ntp true
+#    - name: Time & NTP | Enable ntp
+#      command: timedatectl set-ntp true
 
-    - name: Time & NTP | Restart timedatectl service
-      systemd:
-        name: systemd-timesyncd
-        state: restarted
+#    - name: Time & NTP | Restart timedatectl service
+#      systemd:
+#        name: systemd-timesyncd
+#        state: restarted
 
 ########################### SOURCE/GIT ###########################
 
@@ -140,7 +146,7 @@
     - name: Git setup | Clone BeholderPi GitHub repository
       become_user: pi
       git:
-        repo: https://github.com/MemDynLab/BeholderPi
+        repo: https://github.com/wonkoderverstaendige/BeholderPi
         dest: /home/pi/src/BeholderPi
         update: yes
       register: service_restart
@@ -278,13 +284,3 @@
         sleep: 5
         delay: 5
         timeout: 300
-
-#    - name: Network | Reboot with hostname update
-#      shell: "sleep 1 && reboot"
-#      async: 1
-#      poll: 0
-
-#  #  roles:
-#  #  - update
-#  #  - eye
-#  #  - telegrafer
