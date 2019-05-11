@@ -76,7 +76,7 @@ class ZMQ_Output:
         idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
         # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
-        buf_str = b'PYSPY' + idx + buf
+        buf_str = b'piEye' + idx + buf
 
         # Actually send the buffer to the zmq socket
         #

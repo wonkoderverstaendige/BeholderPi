@@ -3,7 +3,7 @@ from math import ceil
 FRAME_METADATA_H = 0
 N_FRAMES_FPS_LOG = 20
 
-PIEYE_SUB_TOPIC = b'PYSPY'
+PIEYE_SUB_TOPIC = b'piEye'
 
 FFMPEG_BINARY = 'ffmpeg'
 
