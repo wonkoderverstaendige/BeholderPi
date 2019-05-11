@@ -87,6 +87,8 @@ class Grabber(threading.Thread):
         while not self._ev_terminate.is_set():
             # Poll socket for incoming messages, timeout when nothing comes in
             messages = self.poller.poll(SOCKET_RECV_TIMEOUT)
+            if len(messages) > 1:
+                logging.debug(len(messages))
 
             if not len(messages):
                 # Socket receive timeout, display warning
@@ -103,14 +105,15 @@ class Grabber(threading.Thread):
                     logging.info('Frame source connected')
                 for socket, N in messages:
                     encoded_frame = socket.recv()
+
+                    # This for some reason is performance sensitive
                     self.frame = cv2.imdecode(np.fromstring(encoded_frame[13:], dtype='uint8'), cv2.IMREAD_UNCHANGED)
+                    frame_idx = int(np.fromstring(encoded_frame[5:13], dtype='uint64'))
 
                     # For cameras of the bottom row we fliplr/flipud them in the sensor firmware to have the time stamp
                     # on the outside of the frame. We need to reverse that now.
                     if self.transpose:
-                        self.frame = np.flip(self.frame, (0, 1))
-
-                    frame_idx = int(np.fromstring(encoded_frame[5:13], dtype='uint64'))
+                        self.frame = cv2.flip(self.frame, -1)
 
                     # Look at current and previous frame index, check for shenanigans
                     if None not in [frame_idx, self.last_frame_idx]:
@@ -201,8 +204,8 @@ class Grabber(threading.Thread):
         try:
             # with self._shared_arr.get_lock():
             self._fresh_frame[
-                    self.height * self.n_row:self.height * (self.n_row + 1),
-                    self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame
+            self.height * self.n_row:self.height * (self.n_row + 1),
+            self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame
         except ValueError as e:
             logging.debug(('VE', self.n_col, self.n_row, self._fresh_frame.shape, e))
             # logging.info('test')

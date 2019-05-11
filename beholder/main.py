@@ -75,7 +75,8 @@ class Beholder:
                                  out_queue=self.write_queues[n],
                                  trigger_event=self.ev_stop,
                                  ctx=self.zmq_context,
-                                 idx=n) for n in range(len(self.sources))]
+                                 idx=n,
+                                 transpose=n >= 6) for n in range(len(self.sources))]
         # Video storage writers
         self.writers = [Writer(cfg=cfg,
                                in_queue=self.write_queues[n],
