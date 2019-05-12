@@ -179,13 +179,13 @@ then
 fi
 cp -v ${sender_py} "${sdcard_mount}/home/pi/"
 
-sender_service="${scripts_path}services/discovery/beholder_discovery_sender.service"
+sender_service="${scripts_path}services/discovery/eye_discovery_sender.service"
 if [[ ! -e ${sender_service} ]]
 then
     echo "Can't find the sender service file \"${sender_service}\""
     exit
 fi
-cp -v ${sender_service} "${sdcard_mount}/etc/systemd/system/"
+cp -v ${sender_service} "${sdcard_mount}/etc/systemd/system/beholder_discovery_sender.service"
 
 # Unit files are enabled by symlinking the unit file to a target.wants directory
 echo ""

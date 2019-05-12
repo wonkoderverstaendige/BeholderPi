@@ -180,21 +180,6 @@
         enabled: yes
         state: restarted
 
-#        no_block: yes
-#      when: service_restart
-#      changed_when: False
-
-#    - name: Beholder services | Populate service facts
-#      service_facts:
-#      - debug:
-#        var: ansible_facts.services
-#    - name: Beholder services | Restart streaming service
-#      systemd:
-#        name: beholder_streaming
-#        state: restarted
-#        no_block: yes
-#      when: "'beholder_streaming.service' in services"
-#      changed_when: False
 
 ########################### TELEMETRY ###########################
 
