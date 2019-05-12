@@ -139,10 +139,8 @@ class Beholder:
         elif key == ord('r'):
             self.t_phase = cv2.getTickCount()
             if not self.ev_recording.is_set():
-                print('setting record flag')
                 self.ev_recording.set()
             else:
-                print('unsetting record flag')
                 self.ev_recording.clear()
 
         # Detect if close button of was pressed.
@@ -152,21 +150,25 @@ class Beholder:
 
     def process_mouse(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN and flags:
-            self.measure_points[0] = (x, y)
-            self.measure_points[1] = None
+            pass
 
-        elif event == cv2.EVENT_LBUTTONUP:
-            self.measure_points[1] = (x, y)
-            p1, p2 = self.measure_points
-            distance = euclidean_distance(p1, p2)
-            dx = abs(p1[0] - p2[0])
-            dy = abs(p1[1] - p2[1])
-            two_m_cal = 0 if distance == 0 else 2000 / distance
-            logging.info(
-                f'({p1}; {p2}), distance: {distance:.1f} px, dx: {dx}, dy: {dy}, [@2m profile: {two_m_cal:.2f} px/mm]')
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            self.measure_points = [None, None]
 
         elif event == cv2.EVENT_LBUTTONDBLCLK:
-            self.measure_points = [None, None]
+            self.measure_points[0] = self.measure_points[1]
+            self.measure_points[1] = (x, y)
+            print(self.measure_points)
+
+            if None not in self.measure_points:
+                p1, p2 = self.measure_points
+                distance = euclidean_distance(p1, p2)
+                distance_m = distance * 4.29
+                dx = abs(p1[0] - p2[0])
+                dy = abs(p1[1] - p2[1])
+                # two_m_cal = 0 if distance == 0 else 2000 / distance
+                logging.info(
+                    f'({p1}; {p2}) | l: {distance:.1f} px, {distance_m:.0f} mm, dx: {dx}, dy: {dy}')  #  | [@2m profile: {two_m_cal:.2f} mm/px]
 
     def stop(self):
         self.ev_stop.set()
@@ -183,52 +185,6 @@ class Beholder:
             if writer.is_alive():
                 writer.join()
         logging.debug('All Writers joined!')
-
-
-#
-# def main(grabbers):
-#     # debug timing information
-#     intervals = []
-#
-#     spinner = Halo(text='Starting', spinner='dots', interval=200)
-#     spinner.start()
-#
-#     n_frame = 0
-#     last = time()
-#
-#     # Initialize display buffer
-#     disp_frame = np.zeros((480 * N_COLS, 640 * N_ROWS, 3), dtype='uint8')
-#
-#     while True:
-#         try:
-#             elapsed = (time() - last) * 1000
-#             intervals.append(elapsed)
-#             last = time()
-#
-#                 # n_row = n // N_COLS
-#                 # n_col = n % N_COLS
-#                 # print(n_row, n_col)
-#                 #
-#                 # disp_frame[480 * n_row:480 * (n_row + 1), 640 * n_col:640 * (n_col + 1), :] = img
-#
-#             cv2.imshow('Joined', disp_frame)
-#
-#             spinner.text = 'Frame: {:09d}, {:.1f} ms'.format(n_frame, elapsed)  # len(msg[5:])/1000
-#             n_frame += 1
-#
-#             key = cv2.waitKey(20)
-#             if key > 1:
-#                 raise KeyboardInterrupt
-#
-#         except BrokenPipeError:
-#             break
-#         except KeyboardInterrupt:
-#             print('Closing...')
-#
-#             break
-#
-#     spinner.succeed('Done! {} frames received.'.format(n))
-#     print('min: {} ms, max: {} ms'.format(min(intervals), max(intervals)))
 
 
 if __name__ == '__main__':
