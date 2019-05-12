@@ -1,0 +1,164 @@
+---
+- hosts: beholder
+  connection: local
+  vars_files:
+    - vars_eyes.yml
+    - vars_beholder.yml
+  remote_user: "{{ beholder_user }}"
+  become: true
+
+  tasks:
+########################### NETWORK SETUP ###########################
+
+  # Set hostname
+  # set hosts file with hostname and eyes
+
+########################### OS SETUP ###########################
+
+    - name: System setup | Update all installed apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400
+      ignore_errors: true
+      no_log: true
+
+    - name: System setup | Install basic packages
+      apt:
+        pkg:
+          - vim
+          - chrony
+          - git
+          - htop
+          - byobu
+          - openssh-server
+        state: present
+
+########################### NTP and TIME ###########################
+
+    - name: Time & NTP | Disable systemd-timesyncd service
+      systemd:
+        name: systemd-timesyncd
+        state: stopped
+        enabled: no
+        masked: yes
+
+    - name: Time & NTP | Disable openntp service
+      systemd:
+        name: openntp
+        state: stopped
+        enabled: no
+        masked: yes
+
+    - name: Time & NTP | Copy chrony (ntp) configuration
+      template:
+        src: beholder_chrony.conf.j2
+        dest: /etc/chrony/chrony.conf
+        mode: 0644
+
+    - name: Time & NTP | Enable chrony service
+      systemd:
+        name: chrony
+        state: started
+        enabled: yes
+
+########################### SOURCE/GIT ###########################
+
+    - name: Git setup | Create 'src' directory
+      become_user: "{{ beholder_user }}"
+      file:
+        path: "/home/{{ beholder_user }}/src"
+        state: directory
+
+    - name: Git setup | Clone BeholderPi GitHub repository
+      git:
+        repo: https://github.com/wonkoderverstaendige/BeholderPi
+        dest: "/home/{{ beholder_user }}/src/BeholderPi"
+        update: no
+      register: git_update
+
+########################### BEHOLDER SERVICES ###########################
+
+    - name: Beholder services | Copy discovery service file
+      copy:
+        src: "/home/{{ beholder_user }}/src/BeholderPi/scripts/services/discovery/beholder_discovery_sender.service"
+        dest: "/etc/systemd/system/beholder_discovery_sender.service"
+
+    - name: Beholder services | Replace user name in service file
+      replace:
+        path: "/etc/systemd/system/beholder_discovery_sender.service"
+        regexp: 'pi'
+        replace: "{{ beholder_user }}"
+      register: service_restart
+
+    - name: Beholder services | Discovery service
+      systemd:
+        name: beholder_discovery_sender
+        enabled: yes
+        state: restarted
+      when: git_update.before != git_update.after
+
+
+########################### TELEMETRY ###########################
+
+    - name: Telemetry | Check if telegraf is running
+      systemd:
+        name: telegraf
+        state: started
+      register: telegraf_install_required
+      ignore_errors: True
+
+    - name: Telemetry | Install InfluxDB repository key
+      apt_key:
+        url: https://repos.influxdata.com/influxdb.key
+        state: present
+      when: telegraf_install_required
+
+    - name: Telemetry | Add InfluxDB repository deb
+      apt_repository:
+        repo: deb https://repos.influxdata.com/debian stretch stable
+        state: present
+      when: telegraf_install_required
+
+    - name: Telemetry | Install telegraf
+      apt:
+        pkg: telegraf
+        state: present
+      when: telegraf_install_required
+
+    - name: Telemetry | Adding telegraf user to video group
+      user:
+        name: telegraf
+        groups: video
+        append: yes
+
+    - name: Telemetry | Check for telegraf.conf symbolic link status
+      stat: path=/etc/telegraf/telegraf.conf
+      register: telegraf_conf_link
+
+    - name: Telemetry | Link repo telegraf configuration file
+      command: mv /etc/telegraf/telegraf.conf /etc/telegraf/telegraf.bak
+      when: telegraf_conf_link.stat.islnk is defined and not telegraf_conf_link.stat.islnk
+
+    - name: Telemetry | Create symbolic telegraf.conf link from git repo
+      file:
+        src: "/home/{{ beholder_user }}/src/BeholderPi/piEye/resources/telegraf.conf"
+        dest: "/etc/telegraf/telegraf.conf"
+        state: link
+      register: git_update.before != git_update.after
+
+    - name: Telemetry | Set up influxdb credentials
+      template:
+        src: "templates/{{ item.template }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      with_items:
+        - { template: default.telegraf.j2, dest: /etc/default/telegraf }
+      ignore_errors: true
+      register: service_restart
+
+    - name: Telemetry | Restart telegraf
+      systemd:
+        name: telegraf
+        state: restarted
+      when: git_update.before != git_update.after
