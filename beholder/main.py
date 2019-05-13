@@ -158,7 +158,6 @@ class Beholder:
         elif event == cv2.EVENT_LBUTTONDBLCLK:
             self.measure_points[0] = self.measure_points[1]
             self.measure_points[1] = (x, y)
-            print(self.measure_points)
 
             if None not in self.measure_points:
                 p1, p2 = self.measure_points
