@@ -102,6 +102,7 @@
         state: stopped
         enabled: no
         masked: yes
+      ignore_errors: yes
 
     - name: Time & NTP | Copy chrony (ntp) configuration
       template:
