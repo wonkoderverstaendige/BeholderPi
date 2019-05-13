@@ -34,6 +34,11 @@
           - openssh-server
         state: present
 
+    - name: System setup | Install FFmpeg in classic mode
+      snap:
+        - name: ffmpeg
+        - classic: yes  # note, might even require --devmode for hardware acceleration
+
 ########################### NTP and TIME ###########################
 
     - name: Time & NTP | Disable systemd-timesyncd service
