@@ -24,3 +24,6 @@ sources: ['10.0.0.101:5555',
 
 frame_crop_x: 104
 frame_crop_y: 104
+
+scale_floor: 4.28  # mm/px
+scale_arena: 3.30  # mm/px

@@ -94,6 +94,8 @@ class Beholder:
                                ev_trial_active=self.ev_trial_active,
                                idx=n) for n in range(len(self.sources))]
 
+        self.notes = []
+
         # Start threads
         for n in range(len(self.sources)):
             self.grabbers[n].start()
@@ -155,6 +157,11 @@ class Beholder:
             else:
                 self.ev_recording.clear()
 
+        # Stub event to notify of issues for later review.
+        elif key == ord('n'):
+            self.notes.append(time.time())
+            logging.warning('Something happened! Take note!')
+
         # Detect if close button of was pressed.
         # May not be reliable on all platforms/GUI backends
         if cv2.getWindowProperty('Beholder', cv2.WND_PROP_AUTOSIZE) < 1:
@@ -174,12 +181,12 @@ class Beholder:
             if None not in self.measure_points:
                 p1, p2 = self.measure_points
                 distance = euclidean_distance(p1, p2)
-                distance_m = distance * 4.29
+                distance_m_floor = distance * cfg['scale_floor']
+                distance_m_arena = distance * cfg['scale_arena']
                 dx = abs(p1[0] - p2[0])
                 dy = abs(p1[1] - p2[1])
-                # two_m_cal = 0 if distance == 0 else 2000 / distance
                 logging.info(
-                    f'({p1}; {p2}) | l: {distance:.1f} px, {distance_m:.0f} mm, dx: {dx}, dy: {dy}')  #  | [@2m profile: {two_m_cal:.2f} mm/px]
+                    f'({p1}; {p2}) | l: {distance:.1f} px, -arena-: {distance_m_arena:.0f} mm, _floor_: {distance_m_floor:.0f} mm, dx: {dx}, dy: {dy}')
 
     def stop(self):
         self.ev_stop.set()
@@ -196,6 +203,9 @@ class Beholder:
             if writer.is_alive():
                 writer.join()
         logging.debug('All Writers joined!')
+
+        if len(self.notes):
+            logging.warning('There were {} events marked!'.format(len(self.notes)))
 
 
 if __name__ == '__main__':
