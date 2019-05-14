@@ -68,8 +68,8 @@
       pip:
         name:
           - pyyaml
-          - pyzbar
-          - Pillow
+#          - pyzbar
+#          - Pillow
         executable: pip3
 
     - name: System setup | Enable the raspberry camera

@@ -60,6 +60,9 @@ mac_address_mapping:
   "b8:27:eb:9f:ab:2a":
     name: eye13
 
+  "b8:27:eb:be:ae:35":
+    name: eve
+
 
 # Nameservers to use in resolv.conf.
 dns_nameservers:
