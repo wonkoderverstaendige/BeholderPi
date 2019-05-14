@@ -1,20 +1,17 @@
 from math import ceil
 
-FRAME_METADATA_H = 0
 N_FRAMES_FPS_LOG = 20
 
 PIEYE_SUB_TOPIC = b'piEye'
 
-FFMPEG_BINARY = 'ffmpeg'
-
-
 # Note that as of Ubuntu 18.04 using ffmpeg installed with snap has
 # intermittent failures acquiring a CUDA context. This can be worked around
 # by installing the ffmpeg snap in --devmode
+FFMPEG_BINARY = 'ffmpeg'
 FFMPEG_COMMAND = [FFMPEG_BINARY,
                   '-y',
                   '-hide_banner',
-                  # '-loglevel', 'error',
+                  '-loglevel', 'error',
                   '-nostats',
 
                   # '-hwaccel', 'cuvid',
@@ -27,7 +24,7 @@ FFMPEG_COMMAND = [FFMPEG_BINARY,
 # '-filter:v hwupload_cuda,scale_npp=format=nv12:interp_algo=lanczos,hwdownload,format=nv12',
                   # '-c:v', 'libx264',
                   '-c:v', 'h264_nvenc',
-                  '-b:v', '250k',
+                  '-b:v', '350k',
                   # '-gpu', 'list',
                   # '-c:v', 'copy',
                   '-preset', 'slow',
@@ -37,3 +34,4 @@ FFMPEG_COMMAND = [FFMPEG_BINARY,
                   ]
 
 SOCKET_RECV_TIMEOUT = 1000
+WRITE_QUEUE_LENGTH = 150  # frames
