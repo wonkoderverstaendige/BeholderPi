@@ -2,6 +2,7 @@
 
 import pkg_resources
 
+import argparse
 import ctypes
 import logging
 import multiprocessing as mp
@@ -10,6 +11,7 @@ from collections import deque
 import threading
 import yaml
 from math import sqrt
+import time
 
 import numpy as np
 import zmq
@@ -30,7 +32,7 @@ def euclidean_distance(p1, p2):
 
 
 class Beholder:
-    def __init__(self, cfg, shared_arr):
+    def __init__(self, cfg):
         threading.current_thread().name = 'Beholder'
 
         # Control events
@@ -41,6 +43,7 @@ class Beholder:
         self.t_phase = cv2.getTickCount()
 
         self._loop_times = deque(maxlen=N_FRAMES_FPS_LOG)
+        self.__last_display = time.time()
 
         self.cfg = cfg
         self.sources = self.cfg['sources']
@@ -49,15 +52,21 @@ class Beholder:
         self.n_cols = ceil(len(self.cfg['sources']) / self.n_rows)
         self.cfg['n_cols'] = self.n_cols
 
-        self.arr_shape = (cfg['frame_height'] * self.n_rows, cfg['frame_width'] * self.n_cols, cfg['frame_colors'])
+        self.cfg['cropped_frame_width'] = cfg['frame_width'] - 2 * cfg['frame_crop_x']
+        self.cfg['cropped_frame_height'] = cfg['frame_height'] - cfg['frame_crop_y']
+
+        self.cfg['shared_shape'] = (self.cfg['cropped_frame_height'] * self.n_rows,
+                                    self.cfg['cropped_frame_width'] * self.n_cols,
+                                    cfg['frame_colors'])
 
         self.zmq_context = zmq.Context()
 
-        # Shared array population
-        with shared_arr.get_lock():
-            self._shared_arr = shared_arr
-            logging.debug('Beholder shared array: {}'.format(self._shared_arr))
-            self.frame = buf_to_numpy(self._shared_arr, shape=self.arr_shape)
+        # Construct the shared array to fit all frames
+        bufsize = self.cfg['cropped_frame_width'] * self.cfg['cropped_frame_height'] * cfg['frame_colors'] * len(cfg['sources'])
+
+        self._shared_arr = mp.Array(ctypes.c_ubyte, bufsize)
+        logging.debug('Beholder shared array: {}'.format(self._shared_arr))
+        self.frame = buf_to_numpy(self._shared_arr, shape=self.cfg['shared_shape'])
 
         self.disp_frame = np.zeros(self.frame.shape, dtype=np.uint8)
 
@@ -66,7 +75,7 @@ class Beholder:
         # self.paused_frame = np.zeros_like(self.frame)
 
         # Frame queues for video file output
-        self.write_queues = [Queue(maxsize=150) for _ in range(len(self.sources))]
+        self.write_queues = [Queue(maxsize=WRITE_QUEUE_LENGTH) for _ in range(len(self.sources))]
 
         # Grabber objects
         self.grabbers = [Grabber(cfg=self.cfg,
@@ -117,6 +126,9 @@ class Beholder:
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
                 self._loop_times.appendleft(elapsed)
+                if time.time() - self.__last_display > 1:
+                    # print(elapsed)
+                    self.__last_display = time.time()
 
                 t0 = cv2.getTickCount()
                 self.process_events()
@@ -187,16 +199,22 @@ class Beholder:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='BeholderPi visualizer and recorder.')
+
+    parser.add_argument('--crop_x', help='Crop in x-axis (slice off the sides).', type=int)
+    parser.add_argument('--crop_y', help='Crop in y-axis (slice off the sides).', type=int)
+
+    cli_args = parser.parse_args()
+
     # Load configuration
     cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
     with open(cfg_path, 'r') as cfg_f:
         cfg = yaml.load(cfg_f)
 
-    # Construct the shared array to fit all frames
-    num_bytes = cfg['frame_width'] * (cfg['frame_height'] + FRAME_METADATA_H) * cfg['frame_colors'] * len(
-        cfg['sources'])
+    if cli_args.crop_x is not None:
+        cfg['frame_crop_x'] = cli_args.crop_x
+    if cli_args.crop_y is not None:
+        cfg['frame_crop_y'] = cli_args.crop_y
 
-    SHARED_ARR = mp.Array(ctypes.c_ubyte, num_bytes)
-
-    beholder = Beholder(cfg=cfg, shared_arr=SHARED_ARR)
+    beholder = Beholder(cfg)
     beholder.loop()

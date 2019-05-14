@@ -47,6 +47,11 @@ class Grabber(threading.Thread):
         self.n_row = self.id // cfg['n_cols']
         self.n_col = self.id % cfg['n_cols']
 
+        self.crop_x = cfg['frame_crop_x']
+        self.crop_y = cfg['frame_crop_y']
+        self.crop_w = self.width - 2 * self.crop_x
+        self.crop_h = self.height - self.crop_y
+
         self.transpose = transpose
 
         self.fault_frame = cv2.resize(FAULTY_FRAME, (self.width, self.height))
@@ -56,9 +61,11 @@ class Grabber(threading.Thread):
         with arr.get_lock():
             self._shared_arr = arr
             logging.debug('{} shared array: {}'.format(self.name, arr))
-            self._fresh_frame = buf_to_numpy(arr, shape=(
-                self.height * self.cfg['n_rows'], self.width * self.cfg['n_cols'], 3))
+            self._fresh_frame = buf_to_numpy(arr, shape=self.cfg['shared_shape'])
             logging.debug('Numpy shared buffer at {}'.format(hex(self._fresh_frame.ctypes.data)))
+
+        # self.__ff_view = self._fresh_frame[self.height * self.n_row:self.height * (self.n_row + 1),
+        #                                    self.width * self.n_col:self.width * (self.n_col + 1), :]
 
         self._write_queue = out_queue
         self._ev_terminate = trigger_event
@@ -175,8 +182,16 @@ class Grabber(threading.Thread):
         # Forward frame for tracking and display
         try:
             # with self._shared_arr.get_lock():
-            self._fresh_frame[self.height * self.n_row:self.height * (self.n_row + 1),
-                              self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame
+            # self._fresh_frame[self.height * self.n_row:self.height * (self.n_row + 1),
+            # self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame
+
+            fc_lim_M = (self.crop_y, self.crop_y + self.crop_h) if self.n_row else (0, self.crop_h)
+            fc_lim_N = (self.crop_x, self.crop_w + self.crop_x)
+
+            self._fresh_frame[self.crop_h * self.n_row:self.crop_h * (self.n_row + 1),
+                              self.crop_w * self.n_col:self.crop_w * (self.n_col + 1), :] = \
+                self.frame[fc_lim_M[0]:fc_lim_M[1], fc_lim_N[0]:fc_lim_N[1]]
+
         except ValueError as e:
             logging.debug(('VE', self.n_col, self.n_row, self._fresh_frame.shape, e))
 
