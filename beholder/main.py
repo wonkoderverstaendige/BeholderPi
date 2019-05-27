@@ -12,6 +12,7 @@ import threading
 import yaml
 from math import sqrt
 import time
+from pathlib import Path
 
 import numpy as np
 import zmq
@@ -213,8 +214,23 @@ if __name__ == '__main__':
 
     parser.add_argument('--crop_x', help='Crop in x-axis (slice off the sides).', type=int)
     parser.add_argument('--crop_y', help='Crop in y-axis (slice off the sides).', type=int)
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
 
     cli_args = parser.parse_args()
+
+    logfile = "img/{}_beholder.log".format(
+        time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
+
+    if cli_args.debug:
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+    fh = logging.FileHandler(str(logfile))
+    fhf = logging.Formatter('%(asctime)s : %(levelname)s : [%(threadName)-9s] - %(message)s')
+    fh.setFormatter(fhf)
+    logging.getLogger('').addHandler(fh)
 
     # Load configuration
     cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
