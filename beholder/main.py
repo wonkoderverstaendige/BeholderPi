@@ -42,6 +42,7 @@ class Beholder:
         self.ev_tracking = threading.Event()
         self.ev_trial_active = threading.Event()
         self.t_phase = cv2.getTickCount()
+        self.trial_timing_start = None
 
         self._loop_times = deque(maxlen=N_FRAMES_FPS_LOG)
         self.__last_display = time.time()
@@ -63,7 +64,8 @@ class Beholder:
         self.zmq_context = zmq.Context()
 
         # Construct the shared array to fit all frames
-        bufsize = self.cfg['cropped_frame_width'] * self.cfg['cropped_frame_height'] * cfg['frame_colors'] * len(cfg['sources'])
+        bufsize = self.cfg['cropped_frame_width'] * self.cfg['cropped_frame_height'] * cfg['frame_colors'] * len(
+            cfg['sources'])
 
         self._shared_arr = mp.Array(ctypes.c_ubyte, bufsize)
         logging.debug('Beholder shared array: {}'.format(self._shared_arr))
@@ -157,6 +159,18 @@ class Beholder:
                 self.ev_recording.set()
             else:
                 self.ev_recording.clear()
+
+        elif key in [ord('t'), ord('.'), 85, 86]:
+            # Start/stop a trial period
+            if not self.ev_trial_active.is_set():
+                self.ev_trial_active.set()
+                logging.info('Trial {}'.format('++++++++ start ++++++++'))
+                self.trial_timing_start = time.time()
+            else:
+                self.ev_trial_active.clear()
+                logging.info(
+                    'Trial {} Duration: {:.1f}s'.format('++++++++ end  +++++++++',
+                                                        time.time() - self.trial_timing_start))
 
         # Stub event to notify of issues for later review.
         elif key == ord('n'):
