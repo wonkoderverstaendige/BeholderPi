@@ -18,12 +18,13 @@ import numpy as np
 import zmq
 import cv2
 
-from beholder.util import buf_to_numpy
+from beholder.util import buf_to_numpy, fmt_time
 from beholder.grabber import Grabber
 from beholder.writer import Writer
 from beholder.defaults import *
 
 SHARED_ARR = None
+FONT = cv2.FONT_HERSHEY_PLAIN
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
 
@@ -42,7 +43,8 @@ class Beholder:
         self.ev_tracking = threading.Event()
         self.ev_trial_active = threading.Event()
         self.t_phase = cv2.getTickCount()
-        self.trial_timing_start = None
+        self.timing_trial_start = None
+        self.timing_recording_start = None
 
         self._loop_times = deque(maxlen=N_FRAMES_FPS_LOG)
         self.__last_display = time.time()
@@ -124,10 +126,10 @@ class Beholder:
                     pass
                     # with self._shared_arr.get_lock():
                     #     # Copy shared frame content into display buffer
-                    #     self.disp_frame[:] = self.frame
+                self.disp_frame[:] = self.frame
 
-                self.annotate_frame()
-                cv2.imshow('Beholder', self.frame)  # instead of self.disp_frame
+                self.annotate_frame(self.disp_frame)
+                cv2.imshow('Beholder', self.disp_frame)  # instead of self.disp_frame
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
                 self._loop_times.appendleft(elapsed)
@@ -141,10 +143,23 @@ class Beholder:
         except KeyboardInterrupt:
             self.stop()
 
-    def annotate_frame(self):
+    def annotate_frame(self, frame):
         if None not in self.measure_points:
             p1, p2 = self.measure_points
-            cv2.line(self.frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+            cv2.line(frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        if self.ev_recording.is_set():
+            cv2.circle(frame, (100, 100), 75, color=(0, 0, 255), thickness=-1)
+            # if self.timing_recording_start is not None:
+            delta = time.time() - self.timing_recording_start
+            cv2.putText(frame, fmt_time(delta)[:10], (35, 105), fontFace=FONT, fontScale=1.5, color=(255, 255, 255),
+                        thickness=2, lineType=cv2.LINE_AA)
+
+        if self.ev_trial_active.is_set():
+            delta = time.time() - self.timing_trial_start
+            cv2.putText(frame, 'Trial: '+fmt_time(delta)[3:10], (15, 220), fontFace=FONT, fontScale=3, color=(0, 0, 0),
+                        thickness=4, lineType=cv2.LINE_AA)
+            cv2.putText(frame, 'Trial: '+fmt_time(delta)[3:10], (15, 220), fontFace=FONT, fontScale=3, color=(255, 255, 255),
+                        thickness=2, lineType=cv2.LINE_AA)
 
     def process_events(self):
         key = cv2.waitKey(30)
@@ -154,23 +169,16 @@ class Beholder:
 
         # Start or stop recording
         elif key == ord('r'):
-            self.t_phase = cv2.getTickCount()
-            if not self.ev_recording.is_set():
-                self.ev_recording.set()
-            else:
-                self.ev_recording.clear()
+            self.toggle_recording()
 
         elif key in [ord('t'), ord('.'), 85, 86]:
+            if FORCE_RECORDING_ON_TRIAL and not self.ev_recording.is_set():
+                # make sure recording is running when we toggle a trial!
+                logging.warning('Force starting recording on trial initiation. Someone forgot to press record?')
+                self.toggle_recording(True)
+
             # Start/stop a trial period
-            if not self.ev_trial_active.is_set():
-                self.ev_trial_active.set()
-                logging.info('Trial {}'.format('++++++++ start ++++++++'))
-                self.trial_timing_start = time.time()
-            else:
-                self.ev_trial_active.clear()
-                logging.info(
-                    'Trial {} Duration: {:.1f}s'.format('++++++++ end  +++++++++',
-                                                        time.time() - self.trial_timing_start))
+            self.toggle_trial()
 
         # Stub event to notify of issues for later review.
         elif key == ord('n'):
@@ -181,6 +189,33 @@ class Beholder:
         # May not be reliable on all platforms/GUI backends
         if cv2.getWindowProperty('Beholder', cv2.WND_PROP_AUTOSIZE) < 1:
             self.stop()
+
+    def toggle_recording(self, target_state=None):
+        self.t_phase = cv2.getTickCount()
+
+        # gather the new state from current state, else override
+        target_state = target_state if target_state is not None else not self.ev_recording.is_set()
+
+        if target_state:
+            self.ev_recording.set()
+            self.timing_recording_start = time.time()
+        else:
+            self.ev_recording.clear()
+            self.timing_recording_start = None
+
+    def toggle_trial(self, target_state=None):
+        # gather the new state from current state, else override
+        target_state = target_state if target_state is not None else not self.ev_trial_active.is_set()
+
+        if target_state:
+            self.ev_trial_active.set()
+            logging.info('Trial {}'.format('++++++++ start ++++++++'))
+            self.timing_trial_start = time.time()
+        else:
+            self.ev_trial_active.clear()
+            logging.info('Trial {} Duration: {:.1f}s'.format('++++++++ end  +++++++++',
+                                                             time.time() - self.timing_trial_start))
+            self.timing_trial_start = None
 
     def process_mouse(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN and flags:
