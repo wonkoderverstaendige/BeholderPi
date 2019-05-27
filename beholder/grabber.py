@@ -87,7 +87,7 @@ class Grabber(threading.Thread):
         logging.debug('Starting loop in {}!'.format(self.name))
         t0 = cv2.getTickCount()
 
-        annotate = True
+        annotate = False
 
         # Loop while stop flag not set
         while not self._ev_terminate.is_set():
@@ -166,15 +166,16 @@ class Grabber(threading.Thread):
         self.close()
 
     def annotate_frame(self):
-        # vertical lines
-        ch_color = (0, 0, 0)
-        th_thickness = 1
-        cv2.line(self.frame, (300, 350), (300, 390), ch_color, thickness=th_thickness)
-        cv2.line(self.frame, (300, 410), (300, 450), ch_color, thickness=th_thickness)
-
-        # horizontal lines
-        cv2.line(self.frame, (250, 400), (290, 400), ch_color, thickness=th_thickness)
-        cv2.line(self.frame, (310, 400), (350, 400), ch_color, thickness=th_thickness)
+        pass
+        # # vertical lines
+        # ch_color = (0, 0, 0)
+        # th_thickness = 1
+        # cv2.line(self.frame, (300, 350), (300, 390), ch_color, thickness=th_thickness)
+        # cv2.line(self.frame, (300, 410), (300, 450), ch_color, thickness=th_thickness)
+        #
+        # # horizontal lines
+        # cv2.line(self.frame, (250, 400), (290, 400), ch_color, thickness=th_thickness)
+        # cv2.line(self.frame, (310, 400), (350, 400), ch_color, thickness=th_thickness)
 
     def relay_frames(self):
         """Forward acquired image to entities downstream via queues or shared array.
