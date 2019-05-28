@@ -19,7 +19,7 @@ FAULTY_FRAME = np.rot90(cv2.imread(no_signal_path))
 
 
 class Grabber(threading.Thread):
-    def __init__(self, cfg, ctx, arr, target, out_queue, trigger_event, idx=0, transpose=False):
+    def __init__(self, cfg, ctx, arr, target, out_queue, trigger_event, main_thread, idx=0, transpose=False):
         super().__init__()
         self.id = idx
         self.cfg = cfg
@@ -56,6 +56,8 @@ class Grabber(threading.Thread):
 
         self.fault_frame = cv2.resize(FAULTY_FRAME, (self.width, self.height))
         self.no_signal_frame = cv2.resize(NO_SIGNAL_FRAME, (self.width, self.height))
+
+        self.parent = main_thread
 
         # Attach to shared buffer
         with arr.get_lock():

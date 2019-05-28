@@ -42,9 +42,16 @@ class Beholder:
         self.ev_recording = threading.Event()
         self.ev_tracking = threading.Event()
         self.ev_trial_active = threading.Event()
+
+        # timing information
         self.t_phase = cv2.getTickCount()
         self.timing_trial_start = None
         self.timing_recording_start = None
+
+        # recording target
+        self.output_path = cfg['out_path']
+        self.recording_path = None
+        self.recording_ts = None
 
         self._loop_times = deque(maxlen=N_FRAMES_FPS_LOG)
         self.__last_display = time.time()
@@ -90,14 +97,16 @@ class Beholder:
                                  trigger_event=self.ev_stop,
                                  ctx=self.zmq_context,
                                  idx=n,
-                                 transpose=n >= 6) for n in range(len(self.sources))]
+                                 transpose=n >= 6,
+                                 main_thread=self) for n in range(len(self.sources))]
         # Video storage writers
         self.writers = [Writer(cfg=cfg,
                                in_queue=self.write_queues[n],
                                ev_alive=self.ev_stop,
                                ev_recording=self.ev_recording,
                                ev_trial_active=self.ev_trial_active,
-                               idx=n) for n in range(len(self.sources))]
+                               idx=n,
+                               main_thread=self) for n in range(len(self.sources))]
 
         self.notes = []
 
@@ -196,21 +205,41 @@ class Beholder:
         # gather the new state from current state, else override
         target_state = target_state if target_state is not None else not self.ev_recording.is_set()
 
+        # start recording
         if target_state:
+            ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
+            rec_path = self.output_path / ts
+
+            logging.debug(f'Creating output directory {rec_path}')
+            try:
+                rec_path.mkdir(exist_ok=False, parents=True)
+            except FileExistsError:
+                logging.error('The output path already exists! Pressed recording too fast?')
+                return
+
+            self.recording_path = rec_path
+            self.recording_ts = ts
             self.ev_recording.set()
             self.timing_recording_start = time.time()
+
+        # stop recording
         else:
             self.ev_recording.clear()
+            self.recording_path = None
+            self.recording_ts = None
             self.timing_recording_start = None
 
     def toggle_trial(self, target_state=None):
         # gather the new state from current state, else override
         target_state = target_state if target_state is not None else not self.ev_trial_active.is_set()
 
+        # start trial
         if target_state:
             self.ev_trial_active.set()
             logging.info('Trial {}'.format('++++++++ start ++++++++'))
             self.timing_trial_start = time.time()
+
+        # stop trial
         else:
             self.ev_trial_active.clear()
             logging.info('Trial {} Duration: {:.1f}s'.format('++++++++ end  +++++++++',
@@ -264,10 +293,15 @@ if __name__ == '__main__':
     parser.add_argument('--crop_x', help='Crop in x-axis (slice off the sides).', type=int)
     parser.add_argument('--crop_y', help='Crop in y-axis (slice off the sides).', type=int)
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
+    parser.add_argument('-o', '--output', help='Location to store output in', default='img')
 
     cli_args = parser.parse_args()
 
-    logfile = "img/{}_beholder.log".format(
+    out_path = Path(cli_args.output).resolve()
+    if not out_path.exists():
+        raise FileNotFoundError("Output directory '{}' does not exist!")
+
+    logfile = out_path / "{}_beholder.log".format(
         time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
 
     if cli_args.debug:
@@ -290,6 +324,9 @@ if __name__ == '__main__':
         cfg['frame_crop_x'] = cli_args.crop_x
     if cli_args.crop_y is not None:
         cfg['frame_crop_y'] = cli_args.crop_y
+
+    logging.debug('Output destination {}'.format(out_path))
+    cfg['out_path'] = out_path
 
     beholder = Beholder(cfg)
     beholder.loop()
