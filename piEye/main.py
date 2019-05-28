@@ -60,7 +60,7 @@ class ZMQ_Output:
         frame_index = self.camera.frame.index
         if cfg['camera_annotate_metadata']:
             self.camera.annotate_text = self.hostname + ' ' + dt.utcnow().strftime(
-                '%Y-%m-%d %H:%M:%S.%f') + ' ' + str(frame_index)
+                '%Y-%m-%d %H:%M:%S.%f') + ' {:0>10}'.format(frame_index)
 
         # For testing purposes drop every n-th frame
         if self.cfg['debug_drop_nth_frame']:
