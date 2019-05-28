@@ -157,18 +157,20 @@ class Beholder:
             p1, p2 = self.measure_points
             cv2.line(frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
         if self.ev_recording.is_set():
-            cv2.circle(frame, (100, 100), 75, color=(0, 0, 255), thickness=-1)
+
+            cv2.circle(frame, (150, 150), 75, color=(0, 0, 255), thickness=-1)
             # if self.timing_recording_start is not None:
             delta = time.time() - self.timing_recording_start
-            cv2.putText(frame, fmt_time(delta)[:10], (35, 105), fontFace=FONT, fontScale=1.5, color=(255, 255, 255),
+            cv2.putText(frame, fmt_time(delta)[:8], (80, 161), fontFace=FONT, fontScale=2, color=(255, 255, 255),
                         thickness=2, lineType=cv2.LINE_AA)
 
         if self.ev_trial_active.is_set():
             delta = time.time() - self.timing_trial_start
-            cv2.putText(frame, 'Trial: '+fmt_time(delta)[3:10], (15, 220), fontFace=FONT, fontScale=3, color=(0, 0, 0),
+            t_str = fmt_time(delta)
+            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5, color=(0, 0, 0),
+                        thickness=7, lineType=cv2.LINE_AA)
+            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5, color=(255, 255, 255),
                         thickness=4, lineType=cv2.LINE_AA)
-            cv2.putText(frame, 'Trial: '+fmt_time(delta)[3:10], (15, 220), fontFace=FONT, fontScale=3, color=(255, 255, 255),
-                        thickness=2, lineType=cv2.LINE_AA)
 
     def process_events(self):
         key = cv2.waitKey(30)
