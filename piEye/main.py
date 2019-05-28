@@ -54,16 +54,13 @@ class ZMQ_Output:
 
     def write(self, buf):
         """Callback method invoked by the camera when a complete (encoded) frame arrives."""
-        elapsed = (time() - self.last_write) * 1000
         self.last_write = time()
-        elapsed_str = "{:.1f} ms, {:.1f} ups ".format(elapsed, 1000 / elapsed)
 
         # write frame annotation. Frame id is written by the GPU, only write temporal information
+        frame_index = self.camera.frame.index
         if cfg['camera_annotate_metadata']:
             self.camera.annotate_text = self.hostname + ' ' + dt.utcnow().strftime(
-                '%Y-%m-%d %H:%M:%S.%f') + ' @ ' + elapsed_str
-
-        frame_index = self.camera.frame.index
+                '%Y-%m-%d %H:%M:%S.%f') + ' ' + str(frame_index)
 
         # For testing purposes drop every n-th frame
         if self.cfg['debug_drop_nth_frame']:
