@@ -289,9 +289,6 @@ class Beholder:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BeholderPi visualizer and recorder.')
-
-    parser.add_argument('--crop_x', help='Crop in x-axis (slice off the sides).', type=int)
-    parser.add_argument('--crop_y', help='Crop in y-axis (slice off the sides).', type=int)
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
     parser.add_argument('-o', '--output', help='Location to store output in', default='~/Videos/beholder')
 
@@ -320,11 +317,6 @@ if __name__ == '__main__':
     cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
     with open(cfg_path, 'r') as cfg_f:
         cfg = yaml.load(cfg_f)
-
-    if cli_args.crop_x is not None:
-        cfg['frame_crop_x'] = cli_args.crop_x
-    if cli_args.crop_y is not None:
-        cfg['frame_crop_y'] = cli_args.crop_y
 
     logging.debug('Output destination {}'.format(out_path))
     cfg['out_path'] = out_path
