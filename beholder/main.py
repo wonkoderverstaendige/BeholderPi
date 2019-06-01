@@ -53,7 +53,7 @@ class Beholder:
         self.cfg = cfg
         self.sources = self.cfg['sources']
 
-        self.n_rows = self.cfg['n_rows']
+        self.n_rows = min(self.cfg['n_rows'], len(self.sources))
         self.n_cols = ceil(len(self.cfg['sources']) / self.n_rows)
         self.cfg['n_cols'] = self.n_cols
 
