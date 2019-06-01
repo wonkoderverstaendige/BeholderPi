@@ -289,6 +289,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BeholderPi visualizer and recorder.')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
     parser.add_argument('-o', '--output', help='Location to store output in', default='~/Videos/beholder')
+    parser.add_argument('-c', '--config', help='Non-default configuration file to use')
 
     cli_args = parser.parse_args()
 
@@ -311,8 +312,25 @@ if __name__ == '__main__':
     fh.setFormatter(fhf)
     logging.getLogger('').addHandler(fh)
 
-    # Load configuration
-    cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
+    # Load configuration yaml file for beholder
+    if cli_args.config:
+        cfg_path = cli_args.config
+    else:
+        # Check if a local configuration exists
+        cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_local.yml')
+        if Path(cfg_path).exists():
+            logging.debug('Using local config')
+        # Otherwise we fall back on the default file
+        else:
+            logging.debug('Found and using local config file')
+            cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
+
+    cfg_path = Path(cfg_path)
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"Couldn't load configuration file {cfg_path}")
+
+    # Load the configuration file
+    # TODO: Loading overwrites default. Currently an incomplete configuration load will fail.
     with open(cfg_path, 'r') as cfg_f:
         cfg = yaml.load(cfg_f)
 
