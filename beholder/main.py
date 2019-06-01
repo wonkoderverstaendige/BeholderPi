@@ -1,36 +1,30 @@
 #!/usr/bin/env python3
 
-import pkg_resources
-
 import argparse
 import ctypes
 import logging
 import multiprocessing as mp
-from queue import Queue
-from collections import deque
 import threading
-import yaml
-from math import sqrt
 import time
+from collections import deque
 from pathlib import Path
+from queue import Queue
 
-import numpy as np
-import zmq
 import cv2
+import numpy as np
+import pkg_resources
+import yaml
+import zmq
 
-from beholder.util import buf_to_numpy, fmt_time
-from beholder.grabber import Grabber
-from beholder.writer import Writer
 from beholder.defaults import *
+from beholder.grabber import Grabber
+from beholder.util import buf_to_numpy, fmt_time, euclidean_distance
+from beholder.writer import Writer
 
 SHARED_ARR = None
 FONT = cv2.FONT_HERSHEY_PLAIN
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
-
-
-def euclidean_distance(p1, p2):
-    return sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
 class Beholder:
@@ -157,7 +151,6 @@ class Beholder:
             p1, p2 = self.measure_points
             cv2.line(frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
         if self.ev_recording.is_set():
-
             cv2.circle(frame, (150, 150), 75, color=(0, 0, 255), thickness=-1)
             # if self.timing_recording_start is not None:
             delta = time.time() - self.timing_recording_start
@@ -167,9 +160,11 @@ class Beholder:
         if self.ev_trial_active.is_set():
             delta = time.time() - self.timing_trial_start
             t_str = fmt_time(delta)
-            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5, color=(0, 0, 0),
+            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
+                        color=(0, 0, 0),
                         thickness=7, lineType=cv2.LINE_AA)
-            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5, color=(255, 255, 255),
+            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
+                        color=(255, 255, 255),
                         thickness=4, lineType=cv2.LINE_AA)
 
     def process_events(self):
@@ -267,7 +262,8 @@ class Beholder:
                 dx = abs(p1[0] - p2[0])
                 dy = abs(p1[1] - p2[1])
                 logging.info(
-                    f'({p1}; {p2}) | l: {distance:.1f} px, -arena-: {distance_m_arena:.0f} mm, _floor_: {distance_m_floor:.0f} mm, dx: {dx}, dy: {dy}')
+                    f'({p1}; {p2}) | l: {distance:.1f} px, -arena-: {distance_m_arena:.0f} mm,'
+                    ' _floor_: {distance_m_floor:.0f} mm, dx: {dx}, dy: {dy}')
 
     def stop(self):
         self.ev_stop.set()
