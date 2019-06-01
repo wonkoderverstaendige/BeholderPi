@@ -332,7 +332,7 @@ if __name__ == '__main__':
     # Load the configuration file
     # TODO: Loading overwrites default. Currently an incomplete configuration load will fail.
     with open(cfg_path, 'r') as cfg_f:
-        cfg = yaml.load(cfg_f)
+        cfg = yaml.load(cfg_f, Loader=yaml.SafeLoader)
 
     logging.debug('Output destination {}'.format(out_path))
     cfg['out_path'] = out_path
