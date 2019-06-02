@@ -112,7 +112,7 @@ class Tracer:
             self.selected_edge = self.closest_edge(self.clicked_point)
             self.selected_node = self.closest_node(self.clicked_point, self.selected_edge)
             fp = int(self.capture.get(cv2.CAP_PROP_POS_FRAMES))
-            logging.info(f'Click on frame #{fp} @{x}, {y}  [{flag}] {self.selected_node}')
+            logging.info(f'{str.lower(self.selected_node)} at frame #{fp} @{x}, {y}')
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             self.clicked_point = None
@@ -174,9 +174,9 @@ class Tracer:
     @staticmethod
     def annotate_node(frame, node, x, y, color=COLOR_NODE_INACTIVE, color_bg=COLOR_NODE_BG):
         cv2.circle(frame, (x, y), 3, (255, 255, 0), -1)
-        cv2.putText(frame, str(node), (x + 5, y + 5), fontScale=2., fontFace=FONT, color=color_bg, thickness=4,
+        cv2.putText(frame, str(node), (x + 5, y + 5), fontScale=1.5, fontFace=FONT, color=color_bg, thickness=4,
                     lineType=cv2.LINE_AA)
-        cv2.putText(frame, str(node), (x + 5, y + 5), fontScale=2., fontFace=FONT, color=color, thickness=2,
+        cv2.putText(frame, str(node), (x + 5, y + 5), fontScale=1.5, fontFace=FONT, color=color, thickness=2,
                     lineType=cv2.LINE_AA)
 
     def draw_edge(self, frame, edge, color=(128, 128, 0), thickness=1):
