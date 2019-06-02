@@ -285,7 +285,7 @@ class Beholder:
             logging.warning('There were {} events marked!'.format(len(self.notes)))
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='BeholderPi visualizer and recorder.')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
     parser.add_argument('-o', '--output', help='Location to store output in', default='~/Videos/beholder')
@@ -339,3 +339,7 @@ if __name__ == '__main__':
 
     beholder = Beholder(cfg)
     beholder.loop()
+
+
+if __name__ == '__main__':
+    main()
