@@ -267,7 +267,8 @@ if __name__ == '__main__':
     bridge_edges = [('I24', 'J1'),
                     ('I21', 'H2'),
                     ('J23', 'E4'),
-                    ('H24', 'E1')]
+                    ('H24', 'E1'),
+                    ('H5', 'J20')]
 
     graph_prototype = {}
     for isle in island_prefixes:
