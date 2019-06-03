@@ -1,4 +1,4 @@
-from math import ceil
+REC_BUTTON_DEBOUNCE = 2
 
 N_FRAMES_FPS_LOG = 20
 

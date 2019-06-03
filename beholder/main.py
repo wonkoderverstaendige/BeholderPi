@@ -9,6 +9,7 @@ import time
 from collections import deque
 from pathlib import Path
 from queue import Queue
+import math
 
 import cv2
 import numpy as np
@@ -46,6 +47,7 @@ class Beholder:
         self.output_path = cfg['out_path']
         self.recording_path = None
         self.recording_ts = None
+        self.__last_button_press = None
 
         self._loop_times = deque(maxlen=N_FRAMES_FPS_LOG)
         self.__last_display = time.time()
@@ -54,7 +56,7 @@ class Beholder:
         self.sources = self.cfg['sources']
 
         self.n_rows = min(self.cfg['n_rows'], len(self.sources))
-        self.n_cols = ceil(len(self.cfg['sources']) / self.n_rows)
+        self.n_cols = math.ceil(len(self.cfg['sources']) / self.n_rows)
         self.cfg['n_cols'] = self.n_cols
 
         self.cfg['cropped_frame_width'] = cfg['frame_width'] - 2 * cfg['frame_crop_x']
@@ -175,7 +177,10 @@ class Beholder:
 
         # Start or stop recording
         elif key == ord('r'):
-            self.toggle_recording()
+            # prevent pressing the button too fast
+            if self.__last_button_press is None or time.time() - self.__last_button_press < REC_BUTTON_DEBOUNCE:
+                self.__last_button_press = time.time()
+                self.toggle_recording()
 
         elif key in [ord('t'), ord('.'), 85, 86]:
             if FORCE_RECORDING_ON_TRIAL and not self.ev_recording.is_set():
