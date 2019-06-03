@@ -177,10 +177,7 @@ class Beholder:
 
         # Start or stop recording
         elif key == ord('r'):
-            # prevent pressing the button too fast
-            if self.__last_button_press is None or time.time() - self.__last_button_press < REC_BUTTON_DEBOUNCE:
-                self.__last_button_press = time.time()
-                self.toggle_recording()
+            self.toggle_recording()
 
         elif key in [ord('t'), ord('.'), 85, 86]:
             if FORCE_RECORDING_ON_TRIAL and not self.ev_recording.is_set():
@@ -203,6 +200,11 @@ class Beholder:
 
     def toggle_recording(self, target_state=None):
         self.t_phase = cv2.getTickCount()
+
+        # prevent pressing the button too fast
+        if self.__last_button_press is not None and (time.time() - self.__last_button_press) < REC_BUTTON_DEBOUNCE:
+            logging.warning('Pressed recording button too fast!')
+            return
 
         # gather the new state from current state, else override
         target_state = target_state if target_state is not None else not self.ev_recording.is_set()
