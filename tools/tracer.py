@@ -12,8 +12,6 @@ from beholder.util import fmt_time, euclidean_distance
 
 FONT = cv2.FONT_HERSHEY_PLAIN
 
-NODE_KEYS = list(reversed([isle + str(num + 1) for isle in ['I', 'J', 'H', 'E'] for num in range(24)]))
-
 COLOR_NODE_INACTIVE = (255, 255, 255)
 COLOR_NODE_ACTIVE = (255, 0, 0)
 COLOR_NODE_ACTIVE_SECONDARY = (255, 175, 175)
@@ -98,14 +96,10 @@ class Tracer:
 
     def process_mouse(self, event, x, y, flag, params):
         """Mouse event handling"""
-        # TODO: This needs a lot of expansion
-        # TODO: Shift+LClick adds first node not in the dictionary yet at clicked position
-        # TODO: Shift+RClick removes the last added node
         if event == cv2.EVENT_LBUTTONDOWN and flag == (cv2.EVENT_FLAG_SHIFTKEY + cv2.EVENT_FLAG_LBUTTON):
-            nn = NODE_KEYS.pop()
-            self.nodes[nn] = (x, y)
-            fp = int(self.capture.get(cv2.CAP_PROP_POS_FRAMES))
-            logging.info(f'Click on frame #{fp} @{x}, {y}  [{flag}] {nn}')
+            if self.selected_node is not None:
+                self.node_positions[self.selected_node] = (x, y)
+                logging.info(f'Moved node {nn} to {x}, {y}')
 
         elif event == cv2.EVENT_FLAG_LBUTTON:
             self.clicked_point = (x, y)
