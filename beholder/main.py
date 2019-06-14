@@ -264,8 +264,8 @@ class Beholder:
             if None not in self.measure_points:
                 p1, p2 = self.measure_points
                 distance = euclidean_distance(p1, p2)
-                distance_m_floor = distance * cfg['scale_floor']
-                distance_m_arena = distance * cfg['scale_arena']
+                distance_m_floor = distance * self.cfg['scale_floor']
+                distance_m_arena = distance * self.cfg['scale_arena']
                 dx = abs(p1[0] - p2[0])
                 dy = abs(p1[1] - p2[1])
                 logging.info(
