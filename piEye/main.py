@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import pkg_resources
 import socket
-import yaml
 import threading
-
-from random import randint
-from time import sleep, time, clock
 from datetime import datetime as dt
+from pathlib import Path
+from time import time
 
-import numpy as np
 import picamera
+import pkg_resources
+import yaml
 import zmq
 
 NUM_STREAMS = 1
+PI_NAME = socket.gethostname()
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
-
-threading.current_thread().name = socket.gethostname()
+threading.current_thread().name = PI_NAME
 
 
 def get_local_ip():
@@ -121,7 +118,7 @@ def main(cfg):
         # Recording loop
         #
         # when a frame comes in, it is handed to the output module.
-        # We have to sue the 'recording' method instead of the continuous capture
+        # We have to use the 'recording' method instead of the continuous capture
         # as frame metadata (index, timestamp) is only available during recording.
         # TODO: A bunch of error handling is missing and taking care of releasing the camera handle
         camera.start_recording(output, format=cfg['camera_recording_format'])
@@ -136,10 +133,36 @@ def main(cfg):
 
 
 if __name__ == '__main__':
-    # Load configuration data.
-    # TODO: Argparse to load different configurations specified as command line parameters
-    cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_pieye_default.yml')
+    parser = argparse.ArgumentParser(description='BeholderPi visualizer and recorder.')
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
+    parser.add_argument('-c', '--config', help='Non-default configuration file to use')
+
+    cli_args = parser.parse_args()
+
+    if cli_args.debug:
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+    # Load configuration yaml file
+    if cli_args.config:
+        cfg_path = cli_args.config
+    else:
+        # Check if a local configuration exists
+        cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_pieye_local.yml')
+        if Path(cfg_path).exists():
+            logging.debug('Using local config')
+        # Otherwise we fall back on the default file
+        else:
+            logging.debug('Found and using local config file')
+            cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_pieye_local.yml')
+
+    cfg_path = Path(cfg_path)
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"Could not load configuration file {cfg_path}")
+
     with open(cfg_path, 'r') as cfg_f:
-        cfg = yaml.load(cfg_f)
+        cfg = yaml.load(cfg_f, Loader=yaml.SafeLoader)
 
     main(cfg)
