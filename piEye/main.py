@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     cfg_path = Path(cfg_path)
     if not cfg_path.exists():
-        raise FileNotFoundError(f"Could not load configuration file {cfg_path}")
+        raise FileNotFoundError("Could not load configuration file {}".format(cfg_path))
 
     with open(cfg_path, 'r') as cfg_f:
         cfg = yaml.load(cfg_f, Loader=yaml.SafeLoader)
