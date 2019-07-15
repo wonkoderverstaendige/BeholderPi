@@ -1,34 +1,31 @@
 #!/usr/bin/env python3
 
-import pkg_resources
-
 import argparse
 import ctypes
 import logging
 import multiprocessing as mp
-from queue import Queue
-from collections import deque
 import threading
-import yaml
-from math import sqrt
 import time
+from collections import deque
+from pathlib import Path
+from queue import Queue
+import math
 
-import numpy as np
-import zmq
 import cv2
+import numpy as np
+import pkg_resources
+import yaml
+import zmq
 
-from beholder.util import buf_to_numpy
-from beholder.grabber import Grabber
-from beholder.writer import Writer
 from beholder.defaults import *
+from beholder.grabber import Grabber
+from beholder.util import buf_to_numpy, fmt_time, euclidean_distance
+from beholder.writer import Writer
 
 SHARED_ARR = None
+FONT = cv2.FONT_HERSHEY_PLAIN
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
-
-
-def euclidean_distance(p1, p2):
-    return sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
 class Beholder:
@@ -40,7 +37,17 @@ class Beholder:
         self.ev_recording = threading.Event()
         self.ev_tracking = threading.Event()
         self.ev_trial_active = threading.Event()
+
+        # timing information
         self.t_phase = cv2.getTickCount()
+        self.timing_trial_start = None
+        self.timing_recording_start = None
+
+        # recording target
+        self.output_path = cfg['out_path']
+        self.recording_path = None
+        self.recording_ts = None
+        self.__last_button_press = None
 
         self._loop_times = deque(maxlen=N_FRAMES_FPS_LOG)
         self.__last_display = time.time()
@@ -48,8 +55,8 @@ class Beholder:
         self.cfg = cfg
         self.sources = self.cfg['sources']
 
-        self.n_rows = self.cfg['n_rows']
-        self.n_cols = ceil(len(self.cfg['sources']) / self.n_rows)
+        self.n_rows = min(self.cfg['n_rows'], len(self.sources))
+        self.n_cols = math.ceil(len(self.cfg['sources']) / self.n_rows)
         self.cfg['n_cols'] = self.n_cols
 
         self.cfg['cropped_frame_width'] = cfg['frame_width'] - 2 * cfg['frame_crop_x']
@@ -62,7 +69,8 @@ class Beholder:
         self.zmq_context = zmq.Context()
 
         # Construct the shared array to fit all frames
-        bufsize = self.cfg['cropped_frame_width'] * self.cfg['cropped_frame_height'] * cfg['frame_colors'] * len(cfg['sources'])
+        bufsize = self.cfg['cropped_frame_width'] * self.cfg['cropped_frame_height'] * cfg['frame_colors'] * len(
+            cfg['sources'])
 
         self._shared_arr = mp.Array(ctypes.c_ubyte, bufsize)
         logging.debug('Beholder shared array: {}'.format(self._shared_arr))
@@ -85,14 +93,16 @@ class Beholder:
                                  trigger_event=self.ev_stop,
                                  ctx=self.zmq_context,
                                  idx=n,
-                                 transpose=n >= 6) for n in range(len(self.sources))]
+                                 transpose=n >= 6,
+                                 main_thread=self) for n in range(len(self.sources))]
         # Video storage writers
         self.writers = [Writer(cfg=cfg,
                                in_queue=self.write_queues[n],
                                ev_alive=self.ev_stop,
                                ev_recording=self.ev_recording,
                                ev_trial_active=self.ev_trial_active,
-                               idx=n) for n in range(len(self.sources))]
+                               idx=n,
+                               main_thread=self) for n in range(len(self.sources))]
 
         self.notes = []
 
@@ -121,10 +131,10 @@ class Beholder:
                     pass
                     # with self._shared_arr.get_lock():
                     #     # Copy shared frame content into display buffer
-                    #     self.disp_frame[:] = self.frame
+                self.disp_frame[:] = self.frame
 
-                self.annotate_frame()
-                cv2.imshow('Beholder', self.frame)  # instead of self.disp_frame
+                self.annotate_frame(self.disp_frame)
+                cv2.imshow('Beholder', self.disp_frame)  # instead of self.disp_frame
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
                 self._loop_times.appendleft(elapsed)
@@ -138,10 +148,26 @@ class Beholder:
         except KeyboardInterrupt:
             self.stop()
 
-    def annotate_frame(self):
+    def annotate_frame(self, frame):
         if None not in self.measure_points:
             p1, p2 = self.measure_points
-            cv2.line(self.frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+            cv2.line(frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        if self.ev_recording.is_set():
+            cv2.circle(frame, (150, 150), 75, color=(0, 0, 255), thickness=-1)
+            # if self.timing_recording_start is not None:
+            delta = time.time() - self.timing_recording_start
+            cv2.putText(frame, fmt_time(delta)[:8], (80, 161), fontFace=FONT, fontScale=2, color=(255, 255, 255),
+                        thickness=2, lineType=cv2.LINE_AA)
+
+        if self.ev_trial_active.is_set():
+            delta = time.time() - self.timing_trial_start
+            t_str = fmt_time(delta)
+            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
+                        color=(0, 0, 0),
+                        thickness=7, lineType=cv2.LINE_AA)
+            cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
+                        color=(255, 255, 255),
+                        thickness=4, lineType=cv2.LINE_AA)
 
     def process_events(self):
         key = cv2.waitKey(30)
@@ -151,11 +177,16 @@ class Beholder:
 
         # Start or stop recording
         elif key == ord('r'):
-            self.t_phase = cv2.getTickCount()
-            if not self.ev_recording.is_set():
-                self.ev_recording.set()
-            else:
-                self.ev_recording.clear()
+            self.toggle_recording()
+
+        elif key in [ord('t'), ord('.'), 85, 86]:
+            if FORCE_RECORDING_ON_TRIAL and not self.ev_recording.is_set():
+                # make sure recording is running when we toggle a trial!
+                logging.warning('Force starting recording on trial initiation. Someone forgot to press record?')
+                self.toggle_recording(True)
+
+            # Start/stop a trial period
+            self.toggle_trial()
 
         # Stub event to notify of issues for later review.
         elif key == ord('n'):
@@ -166,6 +197,58 @@ class Beholder:
         # May not be reliable on all platforms/GUI backends
         if cv2.getWindowProperty('Beholder', cv2.WND_PROP_AUTOSIZE) < 1:
             self.stop()
+
+    def toggle_recording(self, target_state=None):
+        self.t_phase = cv2.getTickCount()
+
+        # prevent pressing the button too fast
+        if self.__last_button_press is not None and (time.time() - self.__last_button_press) < REC_BUTTON_DEBOUNCE:
+            logging.warning('Pressed recording button too fast!')
+            return
+
+        # gather the new state from current state, else override
+        target_state = target_state if target_state is not None else not self.ev_recording.is_set()
+
+        # start recording
+        if target_state:
+            ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
+            rec_path = self.output_path / ts
+
+            logging.debug(f'Creating output directory {rec_path}')
+            try:
+                rec_path.mkdir(exist_ok=False, parents=True)
+            except FileExistsError:
+                logging.error('The output path already exists! Pressed recording too fast?')
+                return
+
+            self.recording_path = rec_path
+            self.recording_ts = ts
+            self.ev_recording.set()
+            self.timing_recording_start = time.time()
+
+        # stop recording
+        else:
+            self.ev_recording.clear()
+            self.recording_path = None
+            self.recording_ts = None
+            self.timing_recording_start = None
+
+    def toggle_trial(self, target_state=None):
+        # gather the new state from current state, else override
+        target_state = target_state if target_state is not None else not self.ev_trial_active.is_set()
+
+        # start trial
+        if target_state:
+            self.ev_trial_active.set()
+            logging.info('Trial {}'.format('++++++++ start ++++++++'))
+            self.timing_trial_start = time.time()
+
+        # stop trial
+        else:
+            self.ev_trial_active.clear()
+            logging.info('Trial {} Duration: {:.1f}s'.format('++++++++ end  +++++++++',
+                                                             time.time() - self.timing_trial_start))
+            self.timing_trial_start = None
 
     def process_mouse(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN and flags:
@@ -181,12 +264,13 @@ class Beholder:
             if None not in self.measure_points:
                 p1, p2 = self.measure_points
                 distance = euclidean_distance(p1, p2)
-                distance_m_floor = distance * cfg['scale_floor']
-                distance_m_arena = distance * cfg['scale_arena']
+                distance_m_floor = distance * self.cfg['scale_floor']
+                distance_m_arena = distance * self.cfg['scale_arena']
                 dx = abs(p1[0] - p2[0])
                 dy = abs(p1[1] - p2[1])
                 logging.info(
-                    f'({p1}; {p2}) | l: {distance:.1f} px, -arena-: {distance_m_arena:.0f} mm, _floor_: {distance_m_floor:.0f} mm, dx: {dx}, dy: {dy}')
+                    f'({p1}; {p2}) | l: {distance:.1f} px, -arena-: {distance_m_arena:.0f} mm,'
+                    ' _floor_: {distance_m_floor:.0f} mm, dx: {dx}, dy: {dy}')
 
     def stop(self):
         self.ev_stop.set()
@@ -208,23 +292,61 @@ class Beholder:
             logging.warning('There were {} events marked!'.format(len(self.notes)))
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='BeholderPi visualizer and recorder.')
-
-    parser.add_argument('--crop_x', help='Crop in x-axis (slice off the sides).', type=int)
-    parser.add_argument('--crop_y', help='Crop in y-axis (slice off the sides).', type=int)
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
+    parser.add_argument('-o', '--output', help='Location to store output in', default='~/Videos/beholder')
+    parser.add_argument('-c', '--config', help='Non-default configuration file to use')
 
     cli_args = parser.parse_args()
 
-    # Load configuration
-    cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
-    with open(cfg_path, 'r') as cfg_f:
-        cfg = yaml.load(cfg_f)
+    out_path = Path(cli_args.output).expanduser().resolve()
 
-    if cli_args.crop_x is not None:
-        cfg['frame_crop_x'] = cli_args.crop_x
-    if cli_args.crop_y is not None:
-        cfg['frame_crop_y'] = cli_args.crop_y
+    if not out_path.exists():
+        raise FileNotFoundError(f"Output directory '{out_path}' does not exist!")
+
+    logfile = out_path / "{}_beholder.log".format(
+        time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
+
+    if cli_args.debug:
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+
+    fh = logging.FileHandler(str(logfile))
+    fhf = logging.Formatter('%(asctime)s : %(levelname)s : [%(threadName)-9s] - %(message)s')
+    fh.setFormatter(fhf)
+    logging.getLogger('').addHandler(fh)
+
+    # Load configuration yaml file for beholder
+    if cli_args.config:
+        cfg_path = cli_args.config
+    else:
+        # Check if a local configuration exists
+        cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_local.yml')
+        if Path(cfg_path).exists():
+            logging.debug('Using local config')
+        # Otherwise we fall back on the default file
+        else:
+            logging.debug('Found and using local config file')
+            cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_beholder_default.yml')
+
+    cfg_path = Path(cfg_path)
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"Could not load configuration file {cfg_path}")
+
+    # Load the configuration file
+    # TODO: Loading should overwrite defaults. Currently an incomplete configuration load will fail.
+    with open(cfg_path, 'r') as cfg_f:
+        cfg = yaml.load(cfg_f, Loader=yaml.SafeLoader)
+
+    logging.debug('Output destination {}'.format(out_path))
+    cfg['out_path'] = out_path
 
     beholder = Beholder(cfg)
     beholder.loop()
+
+
+if __name__ == '__main__':
+    main()

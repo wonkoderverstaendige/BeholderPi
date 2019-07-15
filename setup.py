@@ -3,13 +3,13 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup(name='BeholderPi',
+setup(name='beholderpi',
       description='BeholderPi',
       author='Ronny Eichler',
       author_email='ronny.eichler@gmail.com',
       version='0.1.5',
-      # install_requires=['nose', 'termcolor', 'vispy', 'numpy', 'tqdm', 'scipy', 'matplotlib', 'h5py', 'hdf5storage'],
       packages=['beholder', 'piEye'],
+      install_requires=['numpy', 'opencv-contrib-python', 'networkx', 'pyzmq', 'pyyaml'],
       # entry_points="""[console_scripts]
-      #       dm=dataman.dataman:main"""
+      #       beholder=beholder.main:main"""
       )

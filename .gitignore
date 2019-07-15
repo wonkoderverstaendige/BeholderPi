@@ -1,5 +1,8 @@
 # Project specifics
 beholder/img/
+beholder/resources/config_beholder_local.yml
+
+# PyCharm
 .idea/
 
 # Ansible retry files

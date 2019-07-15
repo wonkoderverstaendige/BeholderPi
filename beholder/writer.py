@@ -10,7 +10,7 @@ from beholder.defaults import *
 
 
 class Writer(threading.Thread):
-    def __init__(self, cfg, in_queue, ev_alive, ev_recording, ev_trial_active, idx=0):
+    def __init__(self, cfg, in_queue, ev_alive, ev_recording, ev_trial_active, main_thread, idx=0):
         super().__init__()
         self.id = idx
         self.cfg = cfg
@@ -30,19 +30,20 @@ class Writer(threading.Thread):
         self._ev_recording = ev_recording
         self._ev_trial_active = ev_trial_active
 
+        self.parent = main_thread
+
         self.recording = False
         logging.debug('Writer initialization done!')
 
     def start_recording(self):
         # Video output object
-        logging.debug('Starting Recording')
+        logging.debug('Starting Recording in {}'.format(self.parent.recording_path))
 
-        # This does not guarantee all files to have the same name!!
-        ts_launch = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
+        out_path = self.parent.recording_path / 'eye{:02d}_{}.mp4'.format(self.id + 1, self.parent.recording_ts)
+        ffmpeg_cmd = FFMPEG_COMMAND + [str(out_path)]
+        logging.debug(' '.join(ffmpeg_cmd))
 
-        cmd = FFMPEG_COMMAND + ['img/{}_eye{:02d}.mp4'.format(ts_launch, self.id + 1)]
-        self.writer_pipe = sp.Popen(cmd, stdin=sp.PIPE)
-
+        self.writer_pipe = sp.Popen(ffmpeg_cmd, stdin=sp.PIPE)
         # # Frame metadata logger output
         # path_log = fname_base + '.csv'
         # try:
