@@ -179,7 +179,7 @@ class Beholder:
         elif key == ord('r'):
             self.toggle_recording()
 
-        elif key in [ord('t'), ord('.'), 85, 86]:
+        elif key in [ord('t'), ord('b'), 85, 86]:
             if FORCE_RECORDING_ON_TRIAL and not self.ev_recording.is_set():
                 # make sure recording is running when we toggle a trial!
                 logging.warning('Force starting recording on trial initiation. Someone forgot to press record?')
