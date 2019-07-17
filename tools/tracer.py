@@ -216,7 +216,8 @@ if __name__ == '__main__':
         if not node_list_path.exists():
             raise FileNotFoundError(f"Can't find node list file '{str(node_list_path)}'")
     else:
-        raise FileNotFoundError('Need to specify node file!!!')
+        node_list_path = Path('/home/mdadmin/src/BeholderPi/scripts/tools/node_list_juraj.corrected.csv')
+        # raise FileNotFoundError('Need to specify node file!!!')
 
     start_time = 0 if not cli_args.starttime else cli_args.starttime
     if start_time:
