@@ -45,7 +45,7 @@ def make_command(path, crop_x=0, crop_y=0, dur=None, quiet=True, no_stats=False,
     ch = frame_height - cy
 
     cmd = ''
-    cmd += 'ffmpeg -y '
+    cmd += 'ffmpeg -y -hwaccel nvdec '
 
     if quiet:
         cmd += '-hide_banner -loglevel info '
@@ -58,7 +58,11 @@ def make_command(path, crop_x=0, crop_y=0, dur=None, quiet=True, no_stats=False,
 
     # canvas
     cmd += ' -filter_complex "'
-    cmd += f'nullsrc=size={cw * num_cols}x{ch * num_rows} [canvas0];'
+
+    # align to 16px block
+    canvas_w = math.ceil(cw * num_cols / 16) * 16
+    canvas_h = math.ceil(ch * num_rows / 16) * 16
+    cmd += f'nullsrc=size={canvas_w}x{canvas_h} [canvas0];'
 
     # position_assignment
     for n in range(len(videos)):
@@ -77,11 +81,16 @@ def make_command(path, crop_x=0, crop_y=0, dur=None, quiet=True, no_stats=False,
             s += f'[canvas{n + 1}];'
         cmd += s
 
-    cmd += '"'
+    cmd += '" '
+
+    cmd += f'-t {dur}' if dur else ''
+
+    # encoding settings
+    # cmd += '-c:v libx264 -preset veryfast -crf 18 '
+    cmd += '-c:v h264_nvenc -b:v 4000k -preset fast -pix_fmt yuv420p '
 
     outpath = videos[0].parent / 'stitched.mp4'
-    dur_str = f'-t {dur}' if dur else ''
-    cmd += f'{dur_str} -c:v libx264 -preset slow -crf 18 {outpath}'
+    cmd += f'{outpath}'
     return cmd
 
 def _main(cli_args):
