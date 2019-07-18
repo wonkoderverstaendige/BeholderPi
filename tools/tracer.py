@@ -53,7 +53,7 @@ class Tracer:
         self.edges = list(self.nodes.edges)
 
         self.capture = cv2.VideoCapture(str(video_path))
-        self.capture.set(cv2.CAP_PROP_POS_MSEC, capture_offset * 1000)
+        self.capture.set(cv2.CAP_PROP_POS_MSEC, capture_offset)
         cv2.namedWindow('Tracer', cv2.WINDOW_GUI_NORMAL + cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback('Tracer', self.process_mouse)
 
@@ -84,7 +84,7 @@ class Tracer:
                 self.annotate_frame(self.disp_frame)
                 cv2.imshow('Tracer', self.disp_frame)
 
-            key = cv2.waitKey(30)
+            key = cv2.waitKey(5)
             if key == 27 or key == ord('q'):
                 break
 
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     cli_args = parser.parse_args()
     vp = Path(cli_args.path).resolve()
 
-    logfile = vp.parent / "{}_overlay.log".format(
+    logfile = vp.parent / "{}_tracer.log".format(
         time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
 
     if cli_args.debug:
@@ -216,7 +216,8 @@ if __name__ == '__main__':
         if not node_list_path.exists():
             raise FileNotFoundError(f"Can't find node list file '{str(node_list_path)}'")
     else:
-        raise FileNotFoundError('Need to specify node file!!!')
+        node_list_path = Path('/home/mdadmin/src/BeholderPi/scripts/tools/node_list_juraj.corrected.csv')
+        # raise FileNotFoundError('Need to specify node file!!!')
 
     start_time = 0 if not cli_args.starttime else cli_args.starttime
     if start_time:
