@@ -125,9 +125,13 @@ def main(cfg):
         output = ZMQ_Output(cfg, camera, zmq_context, zmq_topic=zmq_topic)
 
         # Command inputs
-        receiver = zmq_context.socket(zmq.SUB)
-        receiver.connect('tcp://*:5557')
-        receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
+        receiver = zmq_context.socket(zmq.PULL)
+        receiver.connect('tcp://192.168.1.105:5557')
+        #receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
+
+        # Initialize poll set
+        poller = zmq.Poller()
+        poller.register(receiver, zmq.POLLIN)
 
         # Recording loop
         #
@@ -135,13 +139,28 @@ def main(cfg):
         # We have to use the 'recording' method instead of the continuous capture
         # as frame metadata (index, timestamp) is only available during recording.
         # TODO: A bunch of error handling is missing and taking care of releasing the camera handle
+        logging.info('Starting recording')
         camera.start_recording(output, format=cfg['camera_recording_format'])
-        while True:
+
+        logging.debug('Entering acquisition loop')
+        alive = True
+        while alive:
             try:
                 camera.wait_recording(1)
                 print(str(receiver.recv_multipart(zmq.NOBLOCK)))
             except KeyboardInterrupt:
-                break
+                logging.debug('Keyboard interrupt!')
+                alive = False
+
+            socks = dict(poller.poll())
+            if receiver in socks and socks[receiver] == zmq.POLLIN:
+                message = receiver.recv()
+                print("Recieved control command: %s" % message)
+                if message == "Exit":
+                    print("Recieved exit command, client will stop recieving messages")
+                    alive = False
+
+        logging.debug('Acquisition loop exited')
 
         camera.stop_recording()
         camera.stop_preview()
