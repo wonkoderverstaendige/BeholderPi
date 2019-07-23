@@ -25,6 +25,8 @@ from beholder.writer import Writer
 SHARED_ARR = None
 FONT = cv2.FONT_HERSHEY_PLAIN
 
+PAUSABLE = True
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
 
 
@@ -134,7 +136,8 @@ class Beholder:
                 self.disp_frame[:] = self.frame
 
                 self.annotate_frame(self.disp_frame)
-                cv2.imshow('Beholder', self.disp_frame)  # instead of self.disp_frame
+                if not self.paused:
+                    cv2.imshow('Beholder', self.disp_frame)  # instead of self.disp_frame
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
                 self._loop_times.appendleft(elapsed)
@@ -192,6 +195,10 @@ class Beholder:
         elif key == ord('n'):
             self.notes.append(time.time())
             logging.warning('Something happened! Take note!')
+
+        elif key == ord(' ') and PAUSABLE:
+            self.paused = not self.paused
+            logging.debug('Paused toggled to {}'.format(self.paused))
 
         # Detect if close button of was pressed.
         # May not be reliable on all platforms/GUI backends
