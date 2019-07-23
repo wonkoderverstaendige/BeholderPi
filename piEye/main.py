@@ -145,6 +145,28 @@ def main(cfg):
 
         logging.debug('Entering acquisition loop')
         alive = True
+        print('awb_mode', camera.awb_mode)
+        print('awb_gains', camera.awb_gains)
+        print('clock_mode', camera.clock_mode)
+        print('brightness', camera.brightness)
+        print('contrast', camera.contrast)
+        print('analog_gain', camera.analog_gain)
+        print('digital_gain', camera.digital_gain)
+        print('iso', camera.iso)
+        print('exposure_compensation', camera.exposure_compensation)
+        print('exposure_mode', camera.exposure_mode)
+        print('exposure_speed', camera.exposure_speed)
+        print('framerate', camera.framerate)
+        print('image_denoise', camera.image_denoise)
+        print('meter_mode', camera.meter_mode)
+        print('saturation', camera.saturation)
+        print('sharpness', camera.sharpness)
+        print('shutter_speed', camera.shutter_speed)
+        print('video_denoise', camera.video_denoise)
+        print('video_stabilization', camera.video_stabilization )
+        print('zoom', camera.zoom)
+
+
         while alive:
             try:
                 camera.wait_recording(1)
