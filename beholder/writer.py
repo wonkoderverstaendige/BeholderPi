@@ -1,10 +1,10 @@
 import csv
-import time
 import logging
+import subprocess as sp
 import threading
 from queue import Empty
 
-import subprocess as sp
+import numpy as np
 
 from beholder.defaults import *
 
@@ -17,6 +17,9 @@ class Writer(threading.Thread):
 
         self.name = 'Writer #{:02d}'.format(self.id)
         self.writer_pipe = None
+        self.log_file = None
+        self.log_csv = None
+        self.log_csv_header_written = False
         self.logger = None
 
         self.n_frames = 0
@@ -44,15 +47,9 @@ class Writer(threading.Thread):
         logging.debug(' '.join(ffmpeg_cmd))
 
         self.writer_pipe = sp.Popen(ffmpeg_cmd, stdin=sp.PIPE)
-        # # Frame metadata logger output
-        # path_log = fname_base + '.csv'
-        # try:
-        #     self.logger = csv.writer(open(path_log, 'w', newline=''))
-        # except FileNotFoundError:
-        #     logging.error('Failed to open log file at {}'.format(path_log))
-        #     self.stop_recording()
-        #
-        # self.logger.writerow(['index', 'bool_trial', 'timestamp', 'tickstamp'])
+        self.log_file = open(out_path.with_suffix('.meta'), 'w', newline='')
+        self.log_csv = csv.writer(self.log_file)
+        self.log_csv_header_written = False
 
         self.recording = True
 
@@ -68,6 +65,10 @@ class Writer(threading.Thread):
             self.writer_pipe.wait()
             self.writer_pipe = None
 
+        if self.log_file is not None and not self.log_file.closed:
+            self.log_csv = None
+            self.log_file.close()
+
         self.logger = None
 
     def run(self):
@@ -75,7 +76,8 @@ class Writer(threading.Thread):
         try:
             while not self._ev_stop.is_set():
                 try:
-                    self.frame = self.in_queue.get(timeout=.5)
+                    metadata, frame = self.in_queue.get(timeout=.5)
+
                 except Empty:
                     continue
 
@@ -91,10 +93,11 @@ class Writer(threading.Thread):
                         logging.error('Attempted to write to failed Writer!')
                         self.stop_recording()
                     else:
-                        self.writer_pipe.stdin.write(self.frame)
-                        # metadata = [self.frame.index, int(self._ev_trial_active.is_set()),
-                        #             self.frame.time_text, self.frame.tickstamp]
-                        # self.logger.writerow(metadata)
+                        self.writer_pipe.stdin.write(frame)
+                        if not self.log_csv_header_written:
+                            self.log_csv.writerow(metadata.keys())
+                            self.log_csv_header_written = True
+                        self.log_csv.writerow(metadata.values())
 
             logging.debug('Stopping loop in {}!'.format(self.name))
         except BaseException as e:

@@ -7,6 +7,7 @@ from collections import deque
 import cv2
 import zmq
 import numpy as np
+import datetime as dt
 
 from beholder.defaults import *
 from beholder.util import buf_to_numpy
@@ -113,11 +114,28 @@ class Grabber(threading.Thread):
                     self.timed_out = False
                     logging.info('Frame source connected')
                 for socket, N in messages:
-                    encoded_frame = socket.recv()
+                    msg = socket.recv_multipart()
+                    recv_clock_ts = dt.datetime.utcnow().timestamp()
+                    encoded_frame = msg[2]
+
+                    md = np.fromstring(msg[1], dtype=PIEYE_METADATA_DTYPE)
+                    metadata = dict(zip(md.dtype.names, md[0]))
+                    metadata['recv_clock_ts'] = recv_clock_ts
+                    metadata['name'] = metadata['name'].decode().strip()
+                    frame_idx = metadata['frame_index']
+
+                    if self._write_queue is not None:
+                        try:
+                            self._write_queue.put_nowait([metadata, encoded_frame])
+                        except Full:
+                            logging.warning('Write queue full! Dropping frame {}'.format(frame_idx))
 
                     # This for some reason is performance sensitive
-                    self.frame = cv2.imdecode(np.fromstring(encoded_frame[13:], dtype='uint8'), cv2.IMREAD_UNCHANGED)
-                    frame_idx = int(np.fromstring(encoded_frame[5:13], dtype='uint64'))
+                    self.frame = cv2.imdecode(np.fromstring(encoded_frame, dtype='uint8'), cv2.IMREAD_UNCHANGED)
+                    cv2.putText(self.frame, f'{frame_idx}', (200, 120), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.1,
+                                color=(0, 0, 0), thickness=2, lineType=cv2.LINE_AA)
+                    cv2.putText(self.frame, f'{frame_idx}', (200, 120), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.1,
+                                color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA)
 
                     # For cameras of the bottom row we fliplr/flipud them in the sensor firmware to have the time stamp
                     # on the outside of the frame. We need to reverse that now.
@@ -135,18 +153,12 @@ class Grabber(threading.Thread):
                             if delta == 2 and not (self.last_frame_idx + 1) % 10000:
                                 logging.debug('Intentional frame skip')
                             else:
-                                logging.warning('Frame skip? prev: {}, curr: {}, {} frame(s) lost'.format(
+                                logging.warning('Frame skip! prev: {}, curr: {}, {} frame(s) lost'.format(
                                     self.last_frame_idx,
                                     frame_idx, delta - 1))
 
                     # Store current frame index
                     self.last_frame_idx = frame_idx
-
-                    if self._write_queue is not None:
-                        try:
-                            self._write_queue.put(encoded_frame[13:], timeout=.5)
-                        except Full:
-                            logging.warning('Dropped frame {}'.format(self.last_frame_idx))
 
             # If no valid frame was decoded even though we did receive something, show a warning
             if self.frame is None:
@@ -192,7 +204,7 @@ class Grabber(threading.Thread):
             fc_lim_N = (self.crop_x, self.crop_w + self.crop_x)
 
             self._fresh_frame[self.crop_h * self.n_row:self.crop_h * (self.n_row + 1),
-                              self.crop_w * self.n_col:self.crop_w * (self.n_col + 1), :] = \
+            self.crop_w * self.n_col:self.crop_w * (self.n_col + 1), :] = \
                 self.frame[fc_lim_M[0]:fc_lim_M[1], fc_lim_N[0]:fc_lim_N[1]]
 
         except ValueError as e:
