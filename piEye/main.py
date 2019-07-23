@@ -75,7 +75,7 @@ class ZMQ_Output:
         #
         # Prefix with SUBSCRIBE topic and metadata, currently only frame index
         # b_f_idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
-        metadata = ('{:<8}' + PI_NAME).encode()
+        metadata = ('{:<8}'.format(PI_NAME)).encode()
         metadata += struct.pack('qqqd', frame_index, frame_gpu_ts, callback_gpu_ts, callback_clock_ts)
 
         # Doesn't seem to take very long though, fraction of a ms
