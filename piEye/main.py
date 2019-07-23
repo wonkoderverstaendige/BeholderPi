@@ -128,6 +128,7 @@ def main(cfg):
         receiver = zmq_context.socket(zmq.PULL)
         receiver.connect('tcp://192.168.1.105:5557')
         #receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
+        logging.debug('Connected to command server')
 
         # Initialize poll set
         poller = zmq.Poller()
@@ -147,7 +148,7 @@ def main(cfg):
         while alive:
             try:
                 camera.wait_recording(1)
-                print(str(receiver.recv_multipart(zmq.NOBLOCK)))
+
             except KeyboardInterrupt:
                 logging.debug('Keyboard interrupt!')
                 alive = False
