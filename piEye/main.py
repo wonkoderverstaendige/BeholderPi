@@ -6,6 +6,7 @@ import threading
 from datetime import datetime as dt
 from pathlib import Path
 from time import time
+import struct
 
 import picamera
 import pkg_resources
@@ -51,17 +52,17 @@ class ZMQ_Output:
 
     def write(self, buf):
         """Callback method invoked by the camera when a complete (encoded) frame arrives."""
+        callback_clock = dt.utcnow()  # dt object
+        callback_clock_ts = callback_clock.timestamp()  # double
+        callback_gpu_ts = self.camera.timestamp  # int
 
-        callback_clock_ts = time()
-        callback_gpu_ts = self.camera.timestamp
-
-        frame_index = self.camera.frame.index
-        frame_gpu_ts = self.camera.frame.timestamp
+        frame_index = self.camera.frame.index  # int
+        frame_gpu_ts = self.camera.frame.timestamp  # int
 
         # write frame annotation. Frame id is written by the GPU, only write temporal information
         # NOTE: This does not annotate the current frame, but some handful frames down the queue.
         if cfg['camera_annotate_metadata']:
-            self.camera.annotate_text = self.hostname + ' ' + dt.utcnow().strftime(
+            self.camera.annotate_text = self.hostname + ' ' + callback_clock.strftime(
                 '%Y-%m-%d %H:%M:%S.%f') + ' {:0>10}'.format(frame_index)
 
         # For testing purposes drop every n-th frame
@@ -73,13 +74,13 @@ class ZMQ_Output:
         # Prepare output buffer
         #
         # Prefix with SUBSCRIBE topic and metadata, currently only frame index
-        metadata = []
-        idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
+        metadata = b'' + PI_NAME.encode()
+        # b_f_idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
 
+        metadata += struct.pack('qqqd', frame_index, frame_gpu_ts, callback_gpu_ts, callback_clock_ts)
 
-        # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
-        message = [self.zmq_topic, idx, buf]
+        message = [self.zmq_topic, metadata, buf]
 
         # Actually send the buffer to the zmq socket
         #
@@ -127,7 +128,7 @@ def main(cfg):
         # Command inputs
         receiver = zmq_context.socket(zmq.PULL)
         receiver.connect('tcp://192.168.1.105:5557')
-        #receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
+        # receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
         logging.debug('Connected to command server')
 
         # Initialize poll set
@@ -145,6 +146,7 @@ def main(cfg):
 
         logging.debug('Entering acquisition loop')
         alive = True
+        print('sensor_mode', camera.sensor_mode)
         print('awb_mode', camera.awb_mode)
         print('awb_gains', camera.awb_gains)
         print('clock_mode', camera.clock_mode)
@@ -163,9 +165,8 @@ def main(cfg):
         print('sharpness', camera.sharpness)
         print('shutter_speed', camera.shutter_speed)
         print('video_denoise', camera.video_denoise)
-        print('video_stabilization', camera.video_stabilization )
+        print('video_stabilization', camera.video_stabilization)
         print('zoom', camera.zoom)
-
 
         while alive:
             try:
