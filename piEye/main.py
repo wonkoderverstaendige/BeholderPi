@@ -39,7 +39,7 @@ class ZMQ_Output:
         for n in range(self.num_duplication):
             sock = context.socket(zmq.PUB)
             target = 'tcp://*:{port:d}'.format(port=cfg['zmq_output_port'] + n)
-            logging.debug('Binding socket at ' + target)
+            logging.debug('Binding stream {} socket at '.format(n, target))
             sock.bind(target)
             self.zmq_sockets.append(sock)
 
@@ -51,10 +51,15 @@ class ZMQ_Output:
 
     def write(self, buf):
         """Callback method invoked by the camera when a complete (encoded) frame arrives."""
-        self.last_write = time()
+
+        callback_clock_ts = time()
+        callback_gpu_ts = self.camera.timestamp
+
+        frame_index = self.camera.frame.index
+        frame_gpu_ts = self.camera.frame.timestamp
 
         # write frame annotation. Frame id is written by the GPU, only write temporal information
-        frame_index = self.camera.frame.index
+        # NOTE: This does not annotate the current frame, but some handful frames down the queue.
         if cfg['camera_annotate_metadata']:
             self.camera.annotate_text = self.hostname + ' ' + dt.utcnow().strftime(
                 '%Y-%m-%d %H:%M:%S.%f') + ' {:0>10}'.format(frame_index)
@@ -68,10 +73,13 @@ class ZMQ_Output:
         # Prepare output buffer
         #
         # Prefix with SUBSCRIBE topic and metadata, currently only frame index
+        metadata = []
         idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
+
+
         # TODO: Use multi-part messages instead to avoid the copy?
         # Doesn't seem to take very long though, fraction of a ms
-        buf_str = self.zmq_topic + idx + buf
+        message = [self.zmq_topic, idx, buf]
 
         # Actually send the buffer to the zmq socket
         #
@@ -80,7 +88,8 @@ class ZMQ_Output:
         # the connection drops those initial messages. Not a problem for us, as recording is handled manually
         # on the subscriber side on a very different time scale.
         for s in self.zmq_sockets:
-            s.send(buf_str)
+            s.send_multipart(message)
+        self.last_write = callback_clock_ts
 
 
 def main(cfg):
@@ -88,8 +97,8 @@ def main(cfg):
     zmq_topic = cfg['zmq_topic_video']
     logging.info('Starting host {} @ {} with topic {}'.format(hostname, get_local_ip(), zmq_topic))
 
-    with picamera.PiCamera(sensor_mode=cfg['camera_sensor_mode']) as camera, \
-            zmq.Context() as context:
+    with picamera.PiCamera(sensor_mode=cfg['camera_sensor_mode'], clock_mode='raw') as camera, \
+            zmq.Context() as zmq_context:
 
         logging.info('Configuring camera')
 
@@ -113,7 +122,12 @@ def main(cfg):
             camera.start_preview()
 
         # The capture handling module.
-        output = ZMQ_Output(cfg, camera, context, zmq_topic=zmq_topic)
+        output = ZMQ_Output(cfg, camera, zmq_context, zmq_topic=zmq_topic)
+
+        # Command inputs
+        receiver = zmq_context.socket(zmq.SUB)
+        receiver.connect('tcp://*:5557')
+        receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
 
         # Recording loop
         #
@@ -125,11 +139,13 @@ def main(cfg):
         while True:
             try:
                 camera.wait_recording(1)
+                print(str(receiver.recv_multipart(zmq.NOBLOCK)))
             except KeyboardInterrupt:
                 break
 
         camera.stop_recording()
         camera.stop_preview()
+        logging.info('Done.')
 
 
 if __name__ == '__main__':
