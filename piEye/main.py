@@ -5,8 +5,8 @@ import socket
 import threading
 from datetime import datetime as dt
 from pathlib import Path
-from time import time
 import struct
+from fractions import Fraction
 
 import picamera
 import pkg_resources
@@ -47,7 +47,7 @@ class ZMQ_Output:
         # # Buffer setup (only needed for `continuous_capture` mode, not in `recording` mode)
         # self.stream = io.BytesIO()
 
-        self.last_write = time()
+        self.last_write = dt.utcnow().timestamp()
         self.hostname = socket.gethostname()
 
     def write(self, buf):
@@ -116,6 +116,10 @@ def main(cfg):
         camera.annotate_background = picamera.Color(cfg['camera_annotate_bg_color'])
         camera.annotate_frame_num = cfg['camera_annotate_frame_num']
         camera.annotate_text_size = cfg['camera_annotate_text_size']
+        camera.awb_mode = cfg['camera_awb_mode']
+        if camera.awb_mode == 'off':
+            gains = (Fraction(cfg['camera_awb_gains'][0:2]), Fraction(cfg['camera_awb_gains'][2:4]))
+            camera.awb_gains = gains
 
         if cfg['camera_preview_enable']:
             logging.debug('Starting Preview')
