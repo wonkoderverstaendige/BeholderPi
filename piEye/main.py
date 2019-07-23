@@ -39,7 +39,7 @@ class ZMQ_Output:
         for n in range(self.num_duplication):
             sock = context.socket(zmq.PUB)
             target = 'tcp://*:{port:d}'.format(port=cfg['zmq_output_port'] + n)
-            logging.debug('Binding stream {} socket at '.format(n, target))
+            logging.debug('Binding stream {} socket at {}'.format(n, target))
             sock.bind(target)
             self.zmq_sockets.append(sock)
 
@@ -141,7 +141,7 @@ def main(cfg):
         # as frame metadata (index, timestamp) is only available during recording.
         # TODO: A bunch of error handling is missing and taking care of releasing the camera handle
         logging.info('Starting recording')
-        camera.start_recording(output, format=cfg['camera_recording_format'])
+        camera.start_recording(output, format=cfg['camera_recording_format'], bitrate=25000000)
 
         logging.debug('Entering acquisition loop')
         alive = True
