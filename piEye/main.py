@@ -128,15 +128,15 @@ def main(cfg):
         # The capture handling module.
         output = ZMQ_Output(cfg, camera, zmq_context, zmq_topic=zmq_topic)
 
-        # Command inputs
-        receiver = zmq_context.socket(zmq.PULL)
-        receiver.connect('tcp://192.168.1.105:5557')
-        # receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
-        logging.debug('Connected to command server')
-
-        # Initialize poll set
-        poller = zmq.Poller()
-        poller.register(receiver, zmq.POLLIN)
+        # # Command inputs
+        # receiver = zmq_context.socket(zmq.PULL)
+        # receiver.connect('tcp://192.168.1.105:5557')
+        # # receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
+        # logging.debug('Connected to command server')
+        #
+        # # Initialize poll set
+        # poller = zmq.Poller()
+        # poller.register(receiver, zmq.POLLIN)
 
         # Recording loop
         #
@@ -179,13 +179,13 @@ def main(cfg):
                 logging.debug('Keyboard interrupt!')
                 alive = False
 
-            socks = dict(poller.poll())
-            if receiver in socks and socks[receiver] == zmq.POLLIN:
-                message = receiver.recv()
-                print("Recieved control command: %s" % message)
-                if message == "Exit":
-                    print("Recieved exit command, client will stop recieving messages")
-                    alive = False
+            # socks = dict(poller.poll())
+            # if receiver in socks and socks[receiver] == zmq.POLLIN:
+            #     message = receiver.recv()
+            #     print("Recieved control command: %s" % message)
+            #     if message == "Exit":
+            #         print("Recieved exit command, client will stop recieving messages")
+            #         alive = False
 
         logging.debug('Acquisition loop exited')
 
