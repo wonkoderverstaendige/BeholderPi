@@ -116,6 +116,7 @@ def main(cfg):
         camera.annotate_background = picamera.Color(cfg['camera_annotate_bg_color'])
         camera.annotate_frame_num = cfg['camera_annotate_frame_num']
         camera.annotate_text_size = cfg['camera_annotate_text_size']
+        camera.brightness = cfg['camera_brightness']
         camera.awb_mode = cfg['camera_awb_mode']
         if camera.awb_mode == 'off':
             gains = (Fraction(*cfg['camera_awb_gains'][0]), Fraction(*cfg['camera_awb_gains'][1]))
@@ -145,10 +146,10 @@ def main(cfg):
         # as frame metadata (index, timestamp) is only available during recording.
         # TODO: A bunch of error handling is missing and taking care of releasing the camera handle
         logging.info('Starting recording')
-        camera.start_recording(output, format=cfg['camera_recording_format'], bitrate=25000000)
+        camera.start_recording(output, format=cfg['camera_recording_format'], bitrate=cfg['camera_recording_bitrate'])
 
-        logging.debug('Entering acquisition loop')
-        alive = True
+        # Let parameters settle and display
+        camera.wait_recording(0.5)
         print('sensor_mode', camera.sensor_mode)
         print('awb_mode', camera.awb_mode)
         print('awb_gains', camera.awb_gains)
@@ -171,6 +172,8 @@ def main(cfg):
         print('video_stabilization', camera.video_stabilization)
         print('zoom', camera.zoom)
 
+        logging.debug('Entering acquisition loop')
+        alive = True
         while alive:
             try:
                 camera.wait_recording(1)
