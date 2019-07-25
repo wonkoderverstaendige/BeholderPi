@@ -118,7 +118,7 @@ def main(cfg):
         camera.annotate_text_size = cfg['camera_annotate_text_size']
         camera.awb_mode = cfg['camera_awb_mode']
         if camera.awb_mode == 'off':
-            gains = (Fraction(*cfg['camera_awb_gains'][0:2]), Fraction(*cfg['camera_awb_gains'][2:4]))
+            gains = (Fraction(*cfg['camera_awb_gains'][0]), Fraction(*cfg['camera_awb_gains'][1]))
             camera.awb_gains = gains
 
         if cfg['camera_preview_enable']:
