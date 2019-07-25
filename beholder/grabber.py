@@ -2,7 +2,7 @@ import logging
 import threading
 import pkg_resources
 from queue import Full
-from collections import deque
+from collections import deque, defaultdict
 
 import cv2
 import zmq
@@ -77,6 +77,17 @@ class Grabber(threading.Thread):
 
         logging.debug('Grabber initialization done!')
 
+    @staticmethod
+    def get_metadata(md):
+        if md is None:
+            metadata = defaultdict(lambda: None)
+        else:
+            md = np.fromstring(md, dtype=PIEYE_METADATA_DTYPE)
+            metadata = dict(zip(md.dtype.names, md[0]))
+            metadata['name'] = metadata['name'].decode().strip()
+
+        return metadata
+
     def run(self):
         # Start up ZMQ connection
         # TODO: Keep attempting to connect
@@ -91,7 +102,7 @@ class Grabber(threading.Thread):
         t0 = cv2.getTickCount()
 
         annotate = False
-
+        _frame_format_deprecation_warned = False
         # Loop while stop flag not set
         while not self._ev_terminate.is_set():
             # Poll socket for incoming messages, timeout when nothing comes in
@@ -109,21 +120,32 @@ class Grabber(threading.Thread):
 
             else:
                 # Source reconnected
-                self.faulted = False
                 if self.timed_out:
+                    logging.info('Frame source (re)connected')
                     self.timed_out = False
-                    logging.info('Frame source connected')
+
                 for socket, N in messages:
+                    self.faulted = False
+
                     msg = socket.recv_multipart()
+                    recv_clock_ts = dt.datetime.utcnow().timestamp()
 
                     # Handle metadata
-                    recv_clock_ts = dt.datetime.utcnow().timestamp()
-                    encoded_frame = msg[2]
+                    # OLD FORMAT (single zmq message, topic:timestamp:frame
+                    if len(msg) < 3:
+                        metadata = self.get_metadata(None)
+                        encoded_frame = msg[0][13:]
+                        if not _frame_format_deprecation_warned:
+                            logging.warning('Deprecated frame format received. Update eye at {}'.format(self.target))
+                            _frame_format_deprecation_warned = True
+                        metadata['frame_index'] = int.from_bytes(msg[0][5:13], byteorder='little')
 
-                    md = np.fromstring(msg[1], dtype=PIEYE_METADATA_DTYPE)
-                    metadata = dict(zip(md.dtype.names, md[0]))
+                    # New format
+                    else:
+                        metadata = self.get_metadata(msg[1])
+                        encoded_frame = msg[2]
+
                     metadata['recv_clock_ts'] = recv_clock_ts
-                    metadata['name'] = metadata['name'].decode().strip()
                     metadata['bytes'] = len(encoded_frame)
                     frame_idx = metadata['frame_index']
 
@@ -135,10 +157,6 @@ class Grabber(threading.Thread):
 
                     # This for some reason is performance sensitive
                     self.frame = cv2.imdecode(np.fromstring(encoded_frame, dtype='uint8'), cv2.IMREAD_UNCHANGED)
-                    cv2.putText(self.frame, f'{frame_idx}', (200, 120), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.1,
-                                color=(0, 0, 0), thickness=2, lineType=cv2.LINE_AA)
-                    cv2.putText(self.frame, f'{frame_idx}', (200, 120), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.1,
-                                color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA)
 
                     # For cameras of the bottom row we fliplr/flipud them in the sensor firmware to have the time stamp
                     # on the outside of the frame. We need to reverse that now.
@@ -153,6 +171,8 @@ class Grabber(threading.Thread):
                                 self.last_frame_idx,
                                 frame_idx, delta - 1))
                         elif delta > 1:
+                            # Initial debugging has every 10000th frame being intentionally drop to check for
+                            # reliable frame skip detection
                             if delta == 2 and not (self.last_frame_idx + 1) % 10000:
                                 logging.debug('Intentional frame skip')
                             else:
@@ -193,6 +213,11 @@ class Grabber(threading.Thread):
         # # horizontal lines
         # cv2.line(self.frame, (250, 400), (290, 400), ch_color, thickness=th_thickness)
         # cv2.line(self.frame, (310, 400), (350, 400), ch_color, thickness=th_thickness)
+
+        # cv2.putText(self.frame, f'{frame_idx}', (200, 120), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.1,
+        #             color=(0, 0, 0), thickness=2, lineType=cv2.LINE_AA)
+        # cv2.putText(self.frame, f'{frame_idx}', (200, 120), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.1,
+        #             color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA)
 
     def relay_frames(self):
         """Forward acquired image to entities downstream via queues or shared array.
