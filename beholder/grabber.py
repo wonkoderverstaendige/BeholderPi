@@ -115,6 +115,8 @@ class Grabber(threading.Thread):
                     logging.info('Frame source connected')
                 for socket, N in messages:
                     msg = socket.recv_multipart()
+
+                    # Handle metadata
                     recv_clock_ts = dt.datetime.utcnow().timestamp()
                     encoded_frame = msg[2]
 
@@ -122,6 +124,7 @@ class Grabber(threading.Thread):
                     metadata = dict(zip(md.dtype.names, md[0]))
                     metadata['recv_clock_ts'] = recv_clock_ts
                     metadata['name'] = metadata['name'].decode().strip()
+                    metadata['bytes'] = len(encoded_frame)
                     frame_idx = metadata['frame_index']
 
                     if self._write_queue is not None:
