@@ -214,11 +214,11 @@ if __name__ == '__main__':
         # Check if a local configuration exists
         cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_pieye_local.yml')
         if Path(cfg_path).exists():
-            logging.debug('Using local config')
+            logging.debug('Found and using local config file')
         # Otherwise we fall back on the default file
         else:
-            logging.debug('Found and using local config file')
-            cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_pieye_local.yml')
+            logging.debug('Using default config file')
+            cfg_path = pkg_resources.resource_filename(__name__, 'resources/config_pieye_default.yml')
 
     cfg_path = Path(cfg_path)
     if not cfg_path.exists():
