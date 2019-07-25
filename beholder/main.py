@@ -304,6 +304,7 @@ def main():
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
     parser.add_argument('-o', '--output', help='Location to store output in', default='~/Videos/beholder')
     parser.add_argument('-c', '--config', help='Non-default configuration file to use')
+    parser.add_argument('--no_crop', help='Override crop options, show full frames.', action='store_true')
 
     cli_args = parser.parse_args()
 
@@ -350,6 +351,11 @@ def main():
 
     logging.debug('Output destination {}'.format(out_path))
     cfg['out_path'] = out_path
+
+    if cli_args.no_crop:
+        logging.info('Overriding cropping parameters. Showing full frames.')
+        cfg['frame_crop_x'] = 0
+        cfg['frame_crop_y'] = 0
 
     beholder = Beholder(cfg)
     beholder.loop()
