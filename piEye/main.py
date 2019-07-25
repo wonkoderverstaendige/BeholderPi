@@ -5,7 +5,8 @@ import socket
 import threading
 from datetime import datetime as dt
 from pathlib import Path
-from time import time
+import struct
+from fractions import Fraction
 
 import picamera
 import pkg_resources
@@ -39,24 +40,29 @@ class ZMQ_Output:
         for n in range(self.num_duplication):
             sock = context.socket(zmq.PUB)
             target = 'tcp://*:{port:d}'.format(port=cfg['zmq_output_port'] + n)
-            logging.debug('Binding socket at ' + target)
+            logging.debug('Binding stream {} socket at {}'.format(n, target))
             sock.bind(target)
             self.zmq_sockets.append(sock)
 
         # # Buffer setup (only needed for `continuous_capture` mode, not in `recording` mode)
         # self.stream = io.BytesIO()
 
-        self.last_write = time()
+        self.last_write = dt.utcnow().timestamp()
         self.hostname = socket.gethostname()
 
     def write(self, buf):
         """Callback method invoked by the camera when a complete (encoded) frame arrives."""
-        self.last_write = time()
+        callback_clock = dt.utcnow()  # dt object
+        callback_clock_ts = callback_clock.timestamp()  # double
+        callback_gpu_ts = self.camera.timestamp  # int
+
+        frame_index = self.camera.frame.index  # int
+        frame_gpu_ts = self.camera.frame.timestamp  # int
 
         # write frame annotation. Frame id is written by the GPU, only write temporal information
-        frame_index = self.camera.frame.index
+        # NOTE: This does not annotate the current frame, but some handful frames down the queue.
         if cfg['camera_annotate_metadata']:
-            self.camera.annotate_text = self.hostname + ' ' + dt.utcnow().strftime(
+            self.camera.annotate_text = self.hostname + ' ' + callback_clock.strftime(
                 '%Y-%m-%d %H:%M:%S.%f') + ' {:0>10}'.format(frame_index)
 
         # For testing purposes drop every n-th frame
@@ -68,10 +74,12 @@ class ZMQ_Output:
         # Prepare output buffer
         #
         # Prefix with SUBSCRIBE topic and metadata, currently only frame index
-        idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
-        # TODO: Use multi-part messages instead to avoid the copy?
+        # b_f_idx = frame_index.to_bytes(length=8, byteorder='little', signed=False)
+        metadata = ('{:<8}'.format(PI_NAME)).encode()
+        metadata += struct.pack('qqqd', frame_index, frame_gpu_ts, callback_gpu_ts, callback_clock_ts)
+
         # Doesn't seem to take very long though, fraction of a ms
-        buf_str = self.zmq_topic + idx + buf
+        message = [self.zmq_topic, metadata, buf]
 
         # Actually send the buffer to the zmq socket
         #
@@ -80,7 +88,8 @@ class ZMQ_Output:
         # the connection drops those initial messages. Not a problem for us, as recording is handled manually
         # on the subscriber side on a very different time scale.
         for s in self.zmq_sockets:
-            s.send(buf_str)
+            s.send_multipart(message)
+        self.last_write = callback_clock_ts
 
 
 def main(cfg):
@@ -88,8 +97,8 @@ def main(cfg):
     zmq_topic = cfg['zmq_topic_video']
     logging.info('Starting host {} @ {} with topic {}'.format(hostname, get_local_ip(), zmq_topic))
 
-    with picamera.PiCamera(sensor_mode=cfg['camera_sensor_mode']) as camera, \
-            zmq.Context() as context:
+    with picamera.PiCamera(sensor_mode=cfg['camera_sensor_mode'], clock_mode='raw') as camera, \
+            zmq.Context() as zmq_context:
 
         logging.info('Configuring camera')
 
@@ -107,13 +116,27 @@ def main(cfg):
         camera.annotate_background = picamera.Color(cfg['camera_annotate_bg_color'])
         camera.annotate_frame_num = cfg['camera_annotate_frame_num']
         camera.annotate_text_size = cfg['camera_annotate_text_size']
+        camera.awb_mode = cfg['camera_awb_mode']
+        if camera.awb_mode == 'off':
+            gains = (Fraction(*cfg['camera_awb_gains'][0]), Fraction(*cfg['camera_awb_gains'][1]))
+            camera.awb_gains = gains
 
         if cfg['camera_preview_enable']:
             logging.debug('Starting Preview')
             camera.start_preview()
 
         # The capture handling module.
-        output = ZMQ_Output(cfg, camera, context, zmq_topic=zmq_topic)
+        output = ZMQ_Output(cfg, camera, zmq_context, zmq_topic=zmq_topic)
+
+        # Command inputs
+        receiver = zmq_context.socket(zmq.PULL)
+        receiver.connect('tcp://192.168.1.105:5557')
+        # receiver.setsockopt(zmq.SUBSCRIBE, 'CMD')
+        logging.debug('Connected to command server')
+
+        # Initialize poll set
+        poller = zmq.Poller()
+        poller.register(receiver, zmq.POLLIN)
 
         # Recording loop
         #
@@ -121,15 +144,54 @@ def main(cfg):
         # We have to use the 'recording' method instead of the continuous capture
         # as frame metadata (index, timestamp) is only available during recording.
         # TODO: A bunch of error handling is missing and taking care of releasing the camera handle
-        camera.start_recording(output, format=cfg['camera_recording_format'])
-        while True:
+        logging.info('Starting recording')
+        camera.start_recording(output, format=cfg['camera_recording_format'], bitrate=25000000)
+
+        logging.debug('Entering acquisition loop')
+        alive = True
+        print('sensor_mode', camera.sensor_mode)
+        print('awb_mode', camera.awb_mode)
+        print('awb_gains', camera.awb_gains)
+        print('clock_mode', camera.clock_mode)
+        print('brightness', camera.brightness)
+        print('contrast', camera.contrast)
+        print('analog_gain', camera.analog_gain)
+        print('digital_gain', camera.digital_gain)
+        print('iso', camera.iso)
+        print('exposure_compensation', camera.exposure_compensation)
+        print('exposure_mode', camera.exposure_mode)
+        print('exposure_speed', camera.exposure_speed)
+        print('framerate', camera.framerate)
+        print('image_denoise', camera.image_denoise)
+        print('meter_mode', camera.meter_mode)
+        print('saturation', camera.saturation)
+        print('sharpness', camera.sharpness)
+        print('shutter_speed', camera.shutter_speed)
+        print('video_denoise', camera.video_denoise)
+        print('video_stabilization', camera.video_stabilization)
+        print('zoom', camera.zoom)
+
+        while alive:
             try:
                 camera.wait_recording(1)
+
             except KeyboardInterrupt:
-                break
+                logging.debug('Keyboard interrupt!')
+                alive = False
+
+            socks = dict(poller.poll())
+            if receiver in socks and socks[receiver] == zmq.POLLIN:
+                message = receiver.recv()
+                print("Recieved control command: %s" % message)
+                if message == "Exit":
+                    print("Recieved exit command, client will stop recieving messages")
+                    alive = False
+
+        logging.debug('Acquisition loop exited')
 
         camera.stop_recording()
         camera.stop_preview()
+        logging.info('Done.')
 
 
 if __name__ == '__main__':

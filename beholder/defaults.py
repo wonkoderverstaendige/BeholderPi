@@ -3,6 +3,9 @@ REC_BUTTON_DEBOUNCE = 2
 N_FRAMES_FPS_LOG = 20
 
 PIEYE_SUB_TOPIC = b'piEye'
+PIEYE_METADATA_DTYPE = [('name', 'S8'), ('frame_index', '<i8'),
+                        ('frame_gpu_ts', '<i8'), ('callback_gpu_ts', '<i8'),
+                        ('callback_clock_ts', '<f8')]
 
 # Note that as of Ubuntu 18.04 using ffmpeg installed with snap has
 # intermittent failures acquiring a CUDA context. This can be worked around
