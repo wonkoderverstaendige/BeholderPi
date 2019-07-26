@@ -3,7 +3,7 @@ camera_sensor_mode: 4
 camera_rotation: 90
 camera_framerate: 30.
 camera_exposure_mode: 'sports'
-camera_brightness: 38
+camera_brightness: 50
 camera_awb_mode: 'auto'
 camera_awb_gains: [[159, 128], [599, 256]]
 
