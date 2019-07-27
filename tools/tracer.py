@@ -88,7 +88,7 @@ class Tracer:
                 self.annotate_frame(self.disp_frame)
                 cv2.imshow('Tracer', self.disp_frame)
 
-            key = cv2.waitKey(5)
+            key = cv2.waitKey(1)
             if key == 27 or key == ord('q'):
                 break
 
