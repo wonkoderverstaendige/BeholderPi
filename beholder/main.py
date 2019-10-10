@@ -61,8 +61,10 @@ class Beholder:
         self.n_cols = math.ceil(len(self.cfg['sources']) / self.n_rows)
         self.cfg['n_cols'] = self.n_cols
 
-        self.cfg['cropped_frame_width'] = cfg['frame_width'] - 2 * cfg['frame_crop_x']
-        self.cfg['cropped_frame_height'] = cfg['frame_height'] - cfg['frame_crop_y']
+        self.cropped_frame_width = cfg['frame_width'] - 2 * cfg['frame_crop_x']
+        self.cfg['cropped_frame_width'] = self.cropped_frame_width
+        self.cropped_frame_height = cfg['frame_height'] - cfg['frame_crop_y']
+        self.cfg['cropped_frame_height'] = self.cropped_frame_height
 
         self.cfg['shared_shape'] = (self.cfg['cropped_frame_height'] * self.n_rows,
                                     self.cfg['cropped_frame_width'] * self.n_cols,
@@ -152,25 +154,53 @@ class Beholder:
             self.stop()
 
     def annotate_frame(self, frame):
+        # Distance measure tool
         if None not in self.measure_points:
             p1, p2 = self.measure_points
             cv2.line(frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-        if self.ev_recording.is_set():
-            cv2.circle(frame, (150, 150), 75, color=(0, 0, 255), thickness=-1)
-            # if self.timing_recording_start is not None:
-            delta = time.time() - self.timing_recording_start
-            cv2.putText(frame, fmt_time(delta)[:8], (80, 161), fontFace=FONT, fontScale=2, color=(255, 255, 255),
-                        thickness=2, lineType=cv2.LINE_AA)
 
+        # Recording status indicator
+        for row in range(self.n_rows):
+            for col in range(self.n_cols):
+                n_cam = col + row * self.n_cols
+                status_color = (80, 80, 80) if self.writers[n_cam].is_alive() else (128, 0, 128)
+                if self.ev_recording.is_set():
+                    status_color = (255, 165, 0)
+                if self.ev_recording.is_set() != self.writers[n_cam].recording:
+                    status_color = (0, 0, 255)
+                cx = col * self.cropped_frame_width + 30
+                if row+1 != self.n_rows:
+                    cy = row * self.cropped_frame_height + 30
+                else:
+                    cy = self.n_rows * self.cropped_frame_height - 30  # last row
+
+                cv2.circle(frame, (cx, cy), 20, color=status_color, thickness=-1)
+
+                cv2.putText(frame, str(n_cam), (cx-2-8*(len(str(n_cam))), cy+10), fontFace=FONT,
+                            fontScale=2, color=(255, 255, 255), thickness=2)  # , lineType=cv2.LINE_AA
+
+        # big recording indicator
+        if self.ev_recording.is_set():
+            delta = time.time() - self.timing_recording_start
+            all_recording = all([w.recording for w in self.writers])
+            status_color = (80, 80, 200) if all_recording else (0, 0, 255)
+
+            if not all_recording:
+                if int(delta) % 2:
+                    cv2.circle(frame, (150, 150), 75, color=status_color, thickness=-1)
+            cv2.putText(frame, 'Rec: ' + fmt_time(delta)[:8], (100, 161), fontFace=FONT, fontScale=2, color=(255, 255, 255),
+                        thickness=2)  # , lineType=cv2.LINE_AA
+
+        # trial duration stopwatch
         if self.ev_trial_active.is_set():
             delta = time.time() - self.timing_trial_start
             t_str = fmt_time(delta)
             cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
                         color=(0, 0, 0),
-                        thickness=7, lineType=cv2.LINE_AA)
+                        thickness=7)  # , lineType=cv2.LINE_AA
             cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
                         color=(255, 255, 255),
-                        thickness=4, lineType=cv2.LINE_AA)
+                        thickness=4)  # , lineType=cv2.LINE_AA
 
     def process_events(self):
         key = cv2.waitKey(30)
