@@ -52,7 +52,7 @@ class Writer(threading.Thread):
         self.log_csv = csv.writer(self.log_file)
         self.log_csv_header_written = False
 
-        # #WARNING: REMOVE ME!
+        # # WARNING: REMOVE ME!
         # if self.id == 4:
         #     try:
         #         self.writer_pipe.terminate()

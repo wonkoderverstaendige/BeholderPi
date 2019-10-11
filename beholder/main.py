@@ -139,7 +139,7 @@ class Beholder:
 
                 self.annotate_frame(self.disp_frame)
                 if not self.paused:
-                    cv2.imshow('Beholder', self.disp_frame)  # instead of self.disp_frame
+                    cv2.imshow('Beholder', self.disp_frame)
 
                 elapsed = ((cv2.getTickCount() - t0) / cv2.getTickFrequency()) * 1000
                 self._loop_times.appendleft(elapsed)
@@ -159,6 +159,20 @@ class Beholder:
             p1, p2 = self.measure_points
             cv2.line(frame, p1, p2, (255, 255, 0), thickness=1, lineType=cv2.LINE_AA)
 
+        # big recording indicator
+        if self.ev_recording.is_set():
+            delta = time.time() - self.timing_recording_start
+            all_recording = all([w.recording for w in self.writers])
+            status_color = (25, 25, 200) if all_recording else (0, 0, 255)
+
+            w = 50
+            ofs = w // 2 + 5
+            if int(delta) % 2 and not all_recording:
+                cv2.rectangle(frame, (ofs, ofs), (frame.shape[1]-ofs, frame.shape[0]-ofs), color=status_color, thickness=w)
+
+            cv2.putText(frame, 'Rec: ' + fmt_time(delta)[:8], (100, 161), fontFace=FONT, fontScale=2,
+                        color=(255, 255, 255), thickness=2)
+
         # Recording status indicator
         for row in range(self.n_rows):
             for col in range(self.n_cols):
@@ -169,38 +183,24 @@ class Beholder:
                 if self.ev_recording.is_set() != self.writers[n_cam].recording:
                     status_color = (0, 0, 255)
                 cx = col * self.cropped_frame_width + 30
-                if row+1 != self.n_rows:
+                if row + 1 != self.n_rows:
                     cy = row * self.cropped_frame_height + 30
                 else:
                     cy = self.n_rows * self.cropped_frame_height - 30  # last row
 
                 cv2.circle(frame, (cx, cy), 20, color=status_color, thickness=-1)
 
-                cv2.putText(frame, str(n_cam), (cx-2-8*(len(str(n_cam))), cy+10), fontFace=FONT,
-                            fontScale=2, color=(255, 255, 255), thickness=2)  # , lineType=cv2.LINE_AA
-
-        # big recording indicator
-        if self.ev_recording.is_set():
-            delta = time.time() - self.timing_recording_start
-            all_recording = all([w.recording for w in self.writers])
-            status_color = (80, 80, 200) if all_recording else (0, 0, 255)
-
-            if not all_recording:
-                if int(delta) % 2:
-                    cv2.circle(frame, (150, 150), 75, color=status_color, thickness=-1)
-            cv2.putText(frame, 'Rec: ' + fmt_time(delta)[:8], (100, 161), fontFace=FONT, fontScale=2, color=(255, 255, 255),
-                        thickness=2)  # , lineType=cv2.LINE_AA
+                cv2.putText(frame, str(n_cam), (cx - 2 - 8 * (len(str(n_cam))), cy + 10), fontFace=FONT,
+                            fontScale=2, color=(255, 255, 255), thickness=2)
 
         # trial duration stopwatch
         if self.ev_trial_active.is_set():
             delta = time.time() - self.timing_trial_start
             t_str = fmt_time(delta)
             cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
-                        color=(0, 0, 0),
-                        thickness=7)  # , lineType=cv2.LINE_AA
+                        color=(0, 0, 0), thickness=7)
             cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
-                        color=(255, 255, 255),
-                        thickness=4)  # , lineType=cv2.LINE_AA
+                        color=(255, 255, 255), thickness=4)
 
     def process_events(self):
         key = cv2.waitKey(30)
