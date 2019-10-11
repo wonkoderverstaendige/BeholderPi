@@ -27,7 +27,7 @@ class Grabber(threading.Thread):
         self.target = 'tcp://{}'.format(target)
 
         self.name = 'Grabber #{:02d}'.format(self.id)
-        logging.info('Initializing ...')
+        logging.debug(f'{self.name} Initializing ...')
 
         # Set up source socket
         self.zmq_context = ctx
@@ -93,7 +93,7 @@ class Grabber(threading.Thread):
         # TODO: Keep attempting to connect
         self.socket = self.zmq_context.socket(zmq.SUB)
         self.socket.setsockopt(zmq.SUBSCRIBE, PIEYE_SUB_TOPIC)
-        logging.info('Connecting to {}'.format(self.target))
+        logging.debug('Connecting to {}'.format(self.target))
         self.socket.connect(self.target)
 
         self.poller.register(self.socket, zmq.POLLIN)

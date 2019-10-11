@@ -3,13 +3,15 @@
 import argparse
 import ctypes
 import logging
+import math
 import multiprocessing as mp
+import shutil
+import sys
 import threading
 import time
 from collections import deque
 from pathlib import Path
 from queue import Queue
-import math
 
 import cv2
 import numpy as np
@@ -25,9 +27,9 @@ from beholder.writer import Writer
 SHARED_ARR = None
 FONT = cv2.FONT_HERSHEY_PLAIN
 
-PAUSABLE = True
+CAN_BE_PAUSED = True
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - {%(levelname)s} (%(threadName)-9s) %(message)s')
 
 
 class Beholder:
@@ -226,7 +228,7 @@ class Beholder:
             self.notes.append(time.time())
             logging.warning('Something happened! Take note!')
 
-        elif key == ord(' ') and PAUSABLE:
+        elif key == ord(' ') and CAN_BE_PAUSED:
             self.paused = not self.paused
             logging.debug('Paused toggled to {}'.format(self.paused))
 
@@ -353,13 +355,12 @@ def main():
         time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
 
     if cli_args.debug:
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(message)s')
-
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(levelname)-8s %(message)s')
     else:
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - (%(threadName)-9s) %(message)s')
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - (%(threadName)-9s) %(levelname)-8s %(message)s')
 
     fh = logging.FileHandler(str(logfile))
-    fhf = logging.Formatter('%(asctime)s : %(levelname)s : [%(threadName)-9s] - %(message)s')
+    fhf = logging.Formatter('%(asctime)s : %(levelname)s : [%(threadName)-9s] {%(levelname)-8s} - %(message)s')
     fh.setFormatter(fhf)
     logging.getLogger('').addHandler(fh)
 
@@ -389,7 +390,7 @@ def main():
     cfg['out_path'] = out_path
 
     if cli_args.no_crop:
-        logging.info('Overriding cropping parameters. Showing full frames.')
+        logging.debug('Overriding cropping parameters. Showing full frames.')
         cfg['frame_crop_x'] = 0
         cfg['frame_crop_y'] = 0
 
