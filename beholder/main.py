@@ -341,9 +341,15 @@ def main():
     out_path = Path(cli_args.output).expanduser().resolve()
 
     if not out_path.exists():
-        raise FileNotFoundError(f"Output directory '{out_path}' does not exist!")
+        logging.warning(f"Output directory '{out_path}' does not exist! Attempting to create...")
+        out_path.mkdir(parents=True)
 
-    logfile = out_path / "{}_beholder.log".format(
+    log_path = out_path / 'log'
+    if not log_path.exists():
+        logging.warning(f"Log file directory '{log_path}' does not exist! Attempting to create...")
+        log_path.mkdir(parents=True)
+
+    logfile = log_path / "{}_beholder.log".format(
         time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
 
     if cli_args.debug:
