@@ -29,7 +29,7 @@ FONT = cv2.FONT_HERSHEY_PLAIN
 
 CAN_BE_PAUSED = True
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - {%(levelname)s} (%(threadName)-9s) %(message)s')
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - {%(levelname)s} (%(threadName)-9s) %(message)s')
 
 
 class Beholder:
@@ -355,9 +355,9 @@ def main():
         time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
 
     if cli_args.debug:
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - (%(threadName)-9s) %(levelname)-8s %(message)s')
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - {%(levelname)s} (%(threadName)-9s) %(message)s')
     else:
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - (%(threadName)-9s) %(levelname)-8s %(message)s')
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - {%(levelname)s} (%(threadName)-9s) %(message)s')
 
     fh = logging.FileHandler(str(logfile))
     fhf = logging.Formatter('%(asctime)s : %(levelname)s : [%(threadName)-9s] {%(levelname)-8s} - %(message)s')
