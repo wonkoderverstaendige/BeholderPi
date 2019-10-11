@@ -364,6 +364,15 @@ def main():
     fh.setFormatter(fhf)
     logging.getLogger('').addHandler(fh)
 
+    # Check available disk space
+    total, used, free = shutil.disk_usage(out_path)
+    logging.debug(f'Disk space: {(free // (2 ** 30))} GB free of {(total // (2 ** 30))} GB total')
+    if (free // (2 ** 30)) < DISK_MIN_GB:
+        logging.error('Not enough hard drive space! At least {} GB required.'.format(DISK_MIN_GB))
+        sys.exit(1)
+    elif (free // (2 ** 30)) < DISK_LOW_GB:
+        logging.warning('Destination running low on hard drive space! At least {} GB required.'.format(DISK_MIN_GB))
+
     # Load configuration yaml file for beholder
     if cli_args.config:
         cfg_path = cli_args.config

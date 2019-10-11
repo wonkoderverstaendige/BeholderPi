@@ -8,6 +8,8 @@ PIEYE_METADATA_DTYPE = [('name', 'S8'), ('frame_index', '<i8'),
                         ('callback_clock_ts', '<f8')]
 
 NUM_PIPE_RETRIES = 3
+DISK_MIN_GB = 10
+DISK_LOW_GB = 30
 
 # Note that as of Ubuntu 18.04 using ffmpeg installed with snap has
 # intermittent failures acquiring a CUDA context. This can be worked around
