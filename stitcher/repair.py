@@ -11,8 +11,9 @@ GLOB_STR_NEW = 'eye??_*.mp4'
 
 
 def assemble(frames, crop_x=104, crop_y=91, n_rows=2):
-    if not all(frames):
-        print('Missing frame?')
+    has_data = [f is not None for f in frames.values()]
+    if not all(has_data):
+        print('Missing frame? {}'.format(has_data))
         return
 
     frame_shape = next(iter(frames.values())).shape
@@ -98,7 +99,7 @@ if __name__ == '__main__':
 
         eye_ids = [int(vp.name[3:5]) - 1 for vp in vid_paths]
         sources = dict(zip(eye_ids, vid_paths))
-        missing = [n for n in range(0, 12) if n + 1 not in eye_ids]
+        missing = [n for n in range(0, 12) if n not in eye_ids]
         print('Missing cameras: {}'.format(missing))
 
         captures = dict(zip(eye_ids, [cv2.VideoCapture(str(vp)) for vp in vid_paths]))
@@ -109,5 +110,9 @@ if __name__ == '__main__':
 
         for n in trange(min(n_frames)):
             frames = {eid: c.read()[1] for eid, c in captures.items()}
+            has_fault = [f is None for f in frames]
+            if any(has_fault):
+                print(list(zip(range(len(has_fault)), has_fault)))
+                break
             stitched = assemble(frames)
             writer.write(stitched)
