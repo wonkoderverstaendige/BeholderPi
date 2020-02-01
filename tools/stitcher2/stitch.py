@@ -52,9 +52,9 @@ class SourceView:
         with open(self.path.with_suffix('.transformation.csv'), 'r') as tf:
             self.transformation = np.array(list(map(float, tf.readline().split(',')))).reshape(3, 3)
         logging.debug(f'Homography matrix: {self.transformation}')
-
-        # Load first image
-        self.next(initial=True)
+        #
+        # # Load first image
+        # self.next(initial=True)
 
     def next(self, initial=False):
         if self.__capture is None:
@@ -68,6 +68,10 @@ class SourceView:
 
         self.img = img
         self.corrected = cv2.warpPerspective(img, self.transformation, (self.out_h, self.out_w))
+        # cv2.imshow('debug', (self.corrected > 0).astype('uint8')*255)
+        # key = -1
+        # while key==-1:
+        #     key = cv2.waitKey(30)
         if self.mask is None:
             self.mask = self.fix_mask(np.sum((self.corrected > 0).astype('uint8'), axis=2))
 
@@ -100,6 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('--preview', action='store_true', help='Show merged frames preview')
     parser.add_argument('--cropx', nargs=2, type=int, help='crop left and right', default=(0, 0))
     parser.add_argument('--cropy', nargs=2, type=int, help='crop top and bottom', default=(0, 0))
+    parser.add_argument('--dry', action='store_true', help='Do not write to disk')
 
     cli_args = parser.parse_args()
 
@@ -116,7 +121,9 @@ if __name__ == '__main__':
         else:
             source_paths.append(source_path)
     assert all([sp.exists() for sp in source_paths])
-    assert all([sp.with_suffix('.transformation.csv').exists() for sp in source_paths])
+
+    # Skip files that do not have a transformation matrix calculated
+    source_paths = [sp for sp in source_paths if sp.with_suffix('.transformation.csv').exists()]
 
     if cli_args.delays is not None:
         assert len(cli_args.delays) == len(source_paths)
@@ -130,19 +137,21 @@ if __name__ == '__main__':
 
     if cli_args.target:
         out_img = np.zeros_like(cv2.imread(str(Path(cli_args.target).resolve().as_posix())), dtype='float')
-        out_w, out_h, _ = out_img.shape
+        out_h, out_w, _ = out_img.shape
+
     elif cli_args.size:
-        out_w, out_h = cli_args.size.split(',') if ',' in cli_args.size else cli_args.size.split('x')
-        out_img = np.zeros((out_h, out_w, 3), dtype=float)
+        out_h, out_w = cli_args.size.split(',') if ',' in cli_args.size else cli_args.size.split('x')
+        out_img = np.zeros((out_w, out_h, 3), dtype=float)
     else:
         raise ValueError('Need either a target image or explicit size information to know output image size.')
-    logging.debug(f'Output image size: {out_w} x {out_h}')
+    logging.info(f'Output image size: {out_w}px x {out_h}px, {out_img.shape}')
+
 
     # Create Source instances
     sources = []
     for sn, sp in enumerate(source_paths):
         delay = 0 if delays is None else int(delays[sn])
-        sv = SourceView(sp, out_w=out_w, out_h=out_h, delay=delay)
+        sv = SourceView(sp, out_w=out_h, out_h=out_w, delay=delay)
         sources.append(sv)
 
     mask = None
@@ -186,16 +195,19 @@ if __name__ == '__main__':
                 add_merge(out_img, src.corrected, mask, inplace=True)
 
             if cli_args.preview:
-                cv2.imshow('Merged', out_img[cy[0]:out_h-cy[1], cx[0]:out_w-cx[1], :].astype('uint8'))
+                cv2.imshow('Merged', out_img[cy[0]:out_h - cy[1], cx[0]:out_w - cx[1], :].astype('uint8'))
 
             digits = str(math.ceil(math.log(num_frames, 10)))
             fmt = 'images{N:0' + digits + 'd}.png'
 
-            cv2.imwrite(str(outdir / fmt.format(N=N)), out_img[cy[0]:out_h-cy[1], cx[0]:out_w-cx[1], :])
+            # Write merged frames to disk
+            if not cli_args.dry:
+                cv2.imwrite(str(outdir / fmt.format(N=N)), out_img[cy[0]:out_h - cy[1], cx[0]:out_w - cx[1], :])
 
             pbar.update(1)
             N += 1
 
+            # Check for frame extraction limit
             if cli_args.num_frames and N >= cli_args.num_frames:
                 logging.debug('Reached maximum amount of frames to extract. Stopping.')
                 key = ord('q')
