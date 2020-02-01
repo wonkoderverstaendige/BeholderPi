@@ -61,7 +61,7 @@ class ZMQ_Output:
 
         # write frame annotation. Frame id is written by the GPU, only write temporal information
         # NOTE: This does not annotate the current frame, but some handful frames down the queue.
-        if cfg['camera_annotate_metadata']:
+        if configuration['camera_annotate_metadata']:
             self.camera.annotate_text = self.hostname + ' ' + callback_clock.strftime(
                 '%Y-%m-%d %H:%M:%S.%f') + ' {:0>10}'.format(frame_index)
 
@@ -154,6 +154,7 @@ def main(cfg):
         # Let parameters settle and display
         camera.wait_recording(0.5)
         print('sensor_mode', camera.sensor_mode)
+        print('resolution', camera.resolution)
         print('awb_mode', camera.awb_mode)
         print('awb_gains', camera.awb_gains)
         print('clock_mode', camera.clock_mode)
@@ -231,6 +232,6 @@ if __name__ == '__main__':
         raise FileNotFoundError("Could not load configuration file {}".format(cfg_path))
 
     with open(str(cfg_path), 'r') as cfg_f:
-        cfg = yaml.load(cfg_f, Loader=yaml.SafeLoader)
+        configuration = yaml.load(cfg_f, Loader=yaml.SafeLoader)
 
-    main(cfg)
+    main(configuration)

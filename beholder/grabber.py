@@ -1,13 +1,13 @@
+import datetime as dt
 import logging
 import threading
-import pkg_resources
-from queue import Full
 from collections import deque, defaultdict
+from queue import Full
 
 import cv2
-import zmq
 import numpy as np
-import datetime as dt
+import pkg_resources
+import zmq
 
 from beholder.defaults import *
 from beholder.util import buf_to_numpy
@@ -222,12 +222,7 @@ class Grabber(threading.Thread):
     def relay_frames(self):
         """Forward acquired image to entities downstream via queues or shared array.
         """
-        # Forward frame for tracking and display
         try:
-            # with self._shared_arr.get_lock():
-            # self._fresh_frame[self.height * self.n_row:self.height * (self.n_row + 1),
-            # self.width * self.n_col:self.width * (self.n_col + 1), :] = self.frame
-
             fc_lim_M = (self.crop_y, self.crop_y + self.crop_h) if self.n_row else (0, self.crop_h)
             fc_lim_N = (self.crop_x, self.crop_w + self.crop_x)
 
