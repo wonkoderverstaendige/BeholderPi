@@ -21,7 +21,7 @@ def add_merge(img1, img2, mask, blur=False, inplace=True):
 
 
 class SourceView:
-    def __init__(self, path, out_h, out_w, delay=0):
+    def __init__(self, path, out_h, out_w, delay=0, skip=0):
         self.path = Path(path).resolve()
         self.__capture = None
         self.out_h, self.out_w = out_h, out_w
@@ -30,6 +30,8 @@ class SourceView:
         self.mask = None
         self.delay = delay
         self.num_frames = 99999999999999999999999999
+        self.frame_n = 0
+        self.skip = skip
 
         # Create capture object if it's a video, else return always the same image.
         if self.path.suffix.lower() in ['.avi', '.mp4']:
@@ -58,6 +60,10 @@ class SourceView:
         if self.__capture is None:
             img = cv2.imread(str(self.path))
         else:
+            _, img = self.__capture.read()
+            self.frame_n += 1
+        if self.skip and not self.frame_n % self.skip:
+            logging.debug('Skipping Frame!')
             _, img = self.__capture.read()
 
         if img is None:
@@ -96,7 +102,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', help='Log debug messages', action='store_true')
     parser.add_argument('-N', '--num_frames', type=int, help='Limit to number of frames to extract, default=all',
                         default=0)
-    parser.add_argument('--delays', nargs='*', help='list of delays in frames per target')
+    parser.add_argument('--offsets', nargs='*', help='List of start offsets in frames per target')
+    parser.add_argument('--skip', nargs='*', help='List of nth frames to skip for frame drift compensation')
     parser.add_argument('--preview', action='store_true', help='Show merged frames preview')
     parser.add_argument('--cropx', nargs=2, type=int, help='crop left and right', default=(0, 0))
     parser.add_argument('--cropy', nargs=2, type=int, help='crop top and bottom', default=(0, 0))
@@ -121,12 +128,12 @@ if __name__ == '__main__':
     # Skip files that do not have a transformation matrix calculated
     source_paths = [sp for sp in source_paths if sp.with_suffix('.transformation.csv').exists()]
 
-    if cli_args.delays is not None:
-        assert len(cli_args.delays) == len(source_paths)
-        delays = list(map(int, cli_args.delays))
+    if cli_args.offsets is not None:
+        assert len(cli_args.offsets) == len(source_paths)
+        offsets = list(map(int, cli_args.offsets))
     else:
-        delays = [0 for n in range(len(source_paths))]
-    logging.debug(f'Frame source delays: {delays}')
+        offsets = [0 for n in range(len(source_paths))]
+    logging.debug(f'Frame source delays: {offsets}')
 
     logging.debug(f'Found {len(source_paths)} video files.')
     print(source_paths)
@@ -142,13 +149,24 @@ if __name__ == '__main__':
         raise ValueError('Need either a target image or explicit size information to know output image size.')
     logging.info(f'Output image size: {out_w}px x {out_h}px, {out_img.shape}')
 
+    # Skip parameter, skipping every nth frame per source.
+    if cli_args.skip is not None:
+        assert(len(cli_args.skip) == len(source_paths))
+        skip = list(map(int, cli_args.skip))
+    else:
+        skip = [0 for n in range(len(source_paths))]
+    logging.debug(f'Frame skips: {skip}')
+
 
     # Create Source instances
     sources = []
     for sn, sp in enumerate(source_paths):
-        delay = 0 if delays is None else int(delays[sn])
-        sv = SourceView(sp, out_w=out_h, out_h=out_w, delay=delay)
+        delay = 0 if offsets is None else int(offsets[sn])
+        sv = SourceView(sp, out_w=out_h, out_h=out_w, delay=delay, skip=skip[sn])
         sources.append(sv)
+
+    if not (len(sources)):
+        raise FileNotFoundError('No valid source files found. Stopping.')
 
     mask = None
 
