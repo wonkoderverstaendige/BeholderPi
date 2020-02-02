@@ -39,17 +39,21 @@ def correct_image(img, corr_mat, width, height):
 
 
 class CameraView:
-    def __init__(self, path, name, target, color=(255, 0, 255)):
+    def __init__(self, path, name, target, color=(255, 0, 255), rotate=False):
         self.path = path
         self.target = target
         self.pairs = []
         self.color = color
         self.name = name
+        self.rotate = rotate
         self.capture = cv2.VideoCapture(str(self.path))
         rv, src_img = self.capture.read()
         if not rv:
             raise IOError(f'Could not read image from source {self.path}')
         self.img = src_img
+
+        self.height, self.width, _ = self.img.shape
+
         self.window = cv2.namedWindow(self.name)
         cv2.imshow(self.name, self.img)
         cv2.setMouseCallback(self.name, self.clicked)
@@ -57,18 +61,24 @@ class CameraView:
         self.corrected = (0.3 * self.target.img.copy()).astype('uint8')
         self.preview_window = cv2.namedWindow(self.name + " corrected")
 
-        self.h = None
+        self.homography = None
 
     def clicked(self, event, x, y, flags, params):
         if event == cv2.EVENT_LBUTTONDBLCLK:
             if self.target.last_click is None:
                 return
             tx, ty, tc = self.target.last_click
-            self.pairs.append([(x, y), (tx, ty), tc])
+
+            # If the image is presented rotated, we need to flip the coordinates
+            if not self.rotate:
+                self.pairs.append([(x, y), (tx, ty), tc])
+            else:
+                self.pairs.append([(self.width-x, self.height-y), (tx, ty), tc])
+
             self.target.last_click = None
         if len(self.pairs) >= 3:
-            self.h = calculate_h(self.pairs)
-            preview = self.target.img * 0.3 + correct_image(self.img, self.h, self.target.h, self.target.w) * 0.7
+            self.homography = calculate_h(self.pairs)
+            preview = self.target.img * 0.3 + correct_image(self.img, self.homography, self.target.h, self.target.w) * 0.7
             self.corrected = preview.astype('uint8')
 
     def read(self, retry_attempt=0):
@@ -87,9 +97,15 @@ class CameraView:
     def update(self):
         self.read()
         for pair in self.pairs:
+            # if self.rotate:
+            #     cv2.circle(self.img, (self.width-pair[0][0], self.height-pair[0][1]), 4, pair[2], -1)
+            # else:
             cv2.circle(self.img, pair[0], 4, pair[2], -1)
 
-        cv2.imshow(self.name, self.img)
+        if self.rotate:
+            cv2.imshow(self.name, np.flip(self.img, axis=(0, 1)))
+        else:
+            cv2.imshow(self.name, self.img)
         cv2.imshow(self.name + " corrected", self.corrected)
 
     def rewind(self):
@@ -104,7 +120,7 @@ class CameraView:
                 of.write(line)
 
         with open(self.path.with_suffix('.transformation.csv'), 'w') as of:
-            of.write(','.join(map(str, list(self.h.flatten()))))
+            of.write(','.join(map(str, list(self.homography.flatten()))))
 
         # write self labels image
         cv2.imwrite(str(self.path.with_suffix('.align.png')), self.img)
@@ -153,6 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('source', help='Path to camera view video file.')
     parser.add_argument('--target', help='Path to target alignment image', default='data/alignment_target.png')
     parser.add_argument('-v', '--verbose', help='Log debug messages', action='store_true')
+    parser.add_argument('--rotate', action='store_true', help='Rotate image by 180 degrees')
 
     cli_args = parser.parse_args()
 
@@ -169,7 +186,7 @@ if __name__ == '__main__':
 
     source_path = Path(cli_args.source).resolve()
     num_cam = int(source_path.stem[-1])
-    source_view = CameraView(source_path, f'Camera{num_cam:01d}', target=target_view)
+    source_view = CameraView(source_path, f'Camera{num_cam:01d}', target=target_view, rotate=cli_args.rotate)
 
     while True:
         key = cv2.waitKey(60)

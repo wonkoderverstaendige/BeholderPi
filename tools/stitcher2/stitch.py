@@ -52,9 +52,7 @@ class SourceView:
         with open(self.path.with_suffix('.transformation.csv'), 'r') as tf:
             self.transformation = np.array(list(map(float, tf.readline().split(',')))).reshape(3, 3)
         logging.debug(f'Homography matrix: {self.transformation}')
-        #
-        # # Load first image
-        # self.next(initial=True)
+
 
     def next(self, initial=False):
         if self.__capture is None:
@@ -68,10 +66,7 @@ class SourceView:
 
         self.img = img
         self.corrected = cv2.warpPerspective(img, self.transformation, (self.out_h, self.out_w))
-        # cv2.imshow('debug', (self.corrected > 0).astype('uint8')*255)
-        # key = -1
-        # while key==-1:
-        #     key = cv2.waitKey(30)
+
         if self.mask is None:
             self.mask = self.fix_mask(np.sum((self.corrected > 0).astype('uint8'), axis=2))
 
@@ -87,6 +82,7 @@ class SourceView:
 
         morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
         mask_outline = cv2.morphologyEx(mask_outline, cv2.MORPH_CLOSE, morph_kernel, iterations=2)
+
         return np.sum(mask_outline, axis=2)
 
 
