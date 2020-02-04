@@ -228,4 +228,4 @@ if __name__ == '__main__':
 
             outfile = outdir / ('images%0'+digits+'d.png')
     logging.info(f'Join frames together with "ffmpeg -r 15 -f image2 -i {str(outfile)} -c:v libx264 -crf'
-                 ' 18 -vf scale=800:-1 stitched.mp4"')
+                 ' 18 -r 15 aligned_stitch.mp4"')

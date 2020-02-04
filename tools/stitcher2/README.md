@@ -1,4 +1,5 @@
 # Stitching Videos
+Create a new directory named with the timestamp of the videos and copy the original copies into it.
 
 ## Calculate alignment matrix
 For each camera angle we need to pre-calculate the transformation matrix with the GUI tool. Start the GUI with
@@ -27,16 +28,16 @@ Repeat for all cameras/videos.
 ## Stitch images
 With the precalculted transformation matrix the images can now be perspective corrected and merged.
 
-`python stitch.py [sources]`
+`python stitch.py --target [target path] [sources]`
 
 Sources should be paths all camera views. To make it easier, if they all have the same name and just different camera 
 number as is usually the case, the source can be specified with a wildcard, either `?` or  `*`. For example:
 
-`python stitch.py "D:\data\2018-10-02_04-40-59_cam_*.avi"`
+`python stitch.py --target "targets\mouse_hexmaze.png" "D:\data\2018-10-02_04-40-59_cam_*.avi"`
 
 Additional parameters of note are `--preview`, giving you a preview of what happens. This is great to tune in on a final
 look, but slows processing down. `--cropx` and `--cropy` allow to trim the borders of the image. `--delays` allows to 
 either start the video in the middle instead of the start, but also to compensate for temporal lag between the cameras.
-If `--delay` is used it must be specified for each source. E.g. for a two camera set of videos `--delay 0 0`.
+If `--skip` is used it must be specified for each source. E.g. for a two camera set of videos `--skip 0 0`.
 Together with `--num_frames` to limit the number of frames to be extracted, segments in the middle of a session can be
 extracted.
