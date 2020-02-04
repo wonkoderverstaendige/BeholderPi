@@ -1,0 +1,299 @@
+EESchema Schematic File Version 4
+EELAYER 26 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Transistor_BJT:BC817 Q1
+U 1 1 5C7C0B71
+P 3200 3300
+F 0 "Q1" H 3391 3346 50  0000 L CNN
+F 1 "BC817" H 3391 3255 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 3400 3225 50  0001 L CIN
+F 3 "http://www.fairchildsemi.com/ds/BC/BC817.pdf" H 3200 3300 50  0001 L CNN
+	1    3200 3300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_BJT:BC817 Q2
+U 1 1 5C7C0BF9
+P 3400 3650
+F 0 "Q2" H 3591 3604 50  0000 L CNN
+F 1 "BC817" H 3591 3695 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 3600 3575 50  0001 L CIN
+F 3 "http://www.fairchildsemi.com/ds/BC/BC817.pdf" H 3400 3650 50  0001 L CNN
+	1    3400 3650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_BJT:BC817 Q3
+U 1 1 5C7C0C41
+P 3600 4000
+F 0 "Q3" H 3791 4046 50  0000 L CNN
+F 1 "BC817" H 3791 3955 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 3800 3925 50  0001 L CIN
+F 3 "http://www.fairchildsemi.com/ds/BC/BC817.pdf" H 3600 4000 50  0001 L CNN
+	1    3600 4000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:LED_RGB D1
+U 1 1 5C7C0D28
+P 3500 2800
+F 0 "D1" V 3546 2470 50  0000 R CNN
+F 1 "LED_RGB" V 3455 2470 50  0000 R CNN
+F 2 "LED_SMD:LED_RGB_5050-6" H 3500 2750 50  0001 C CNN
+F 3 "~" H 3500 2750 50  0001 C CNN
+	1    3500 2800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R4
+U 1 1 5C7C138B
+P 3300 2350
+F 0 "R4" H 3370 2396 50  0000 L CNN
+F 1 "220" H 3370 2305 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3230 2350 50  0001 C CNN
+F 3 "~" H 3300 2350 50  0001 C CNN
+	1    3300 2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R5
+U 1 1 5C7C13AB
+P 3500 2350
+F 0 "R5" H 3570 2396 50  0000 L CNN
+F 1 "220" H 3570 2305 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3430 2350 50  0001 C CNN
+F 3 "~" H 3500 2350 50  0001 C CNN
+	1    3500 2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0101
+U 1 1 5C7C1CC1
+P 3700 4400
+F 0 "#PWR0101" H 3700 4150 50  0001 C CNN
+F 1 "GND" H 3705 4227 50  0000 C CNN
+F 2 "" H 3700 4400 50  0001 C CNN
+F 3 "" H 3700 4400 50  0001 C CNN
+	1    3700 4400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3700 4200 3700 4400
+Wire Wire Line
+	3500 4200 3700 4200
+Connection ~ 3700 4200
+$Comp
+L Device:R R1
+U 1 1 5C7C1E8F
+P 2750 3300
+F 0 "R1" V 2957 3300 50  0000 C CNN
+F 1 "1k" V 2866 3300 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 2680 3300 50  0001 C CNN
+F 3 "~" H 2750 3300 50  0001 C CNN
+	1    2750 3300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R2
+U 1 1 5C7C1EF7
+P 2750 3650
+F 0 "R2" V 2957 3650 50  0000 C CNN
+F 1 "1k" V 2866 3650 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 2680 3650 50  0001 C CNN
+F 3 "~" H 2750 3650 50  0001 C CNN
+	1    2750 3650
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R3
+U 1 1 5C7C1F5F
+P 2750 4000
+F 0 "R3" V 2957 4000 50  0000 C CNN
+F 1 "1k" V 2866 4000 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 2680 4000 50  0001 C CNN
+F 3 "~" H 2750 4000 50  0001 C CNN
+	1    2750 4000
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R6
+U 1 1 5C7C2056
+P 3700 2350
+F 0 "R6" H 3770 2396 50  0000 L CNN
+F 1 "220" H 3770 2305 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3630 2350 50  0001 C CNN
+F 3 "~" H 3700 2350 50  0001 C CNN
+	1    3700 2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0102
+U 1 1 5C7C244B
+P 3500 1950
+F 0 "#PWR0102" H 3500 1800 50  0001 C CNN
+F 1 "+5V" H 3515 2123 50  0000 C CNN
+F 2 "" H 3500 1950 50  0001 C CNN
+F 3 "" H 3500 1950 50  0001 C CNN
+	1    3500 1950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3500 1950 3500 2050
+Wire Wire Line
+	3300 2200 3300 2050
+Wire Wire Line
+	3300 2050 3500 2050
+Connection ~ 3500 2050
+Wire Wire Line
+	3500 2050 3500 2200
+Wire Wire Line
+	3700 2200 3700 2050
+Wire Wire Line
+	3700 2050 3500 2050
+Wire Wire Line
+	3300 2500 3300 2600
+Wire Wire Line
+	3500 2500 3500 2600
+Wire Wire Line
+	3700 2500 3700 2600
+Wire Wire Line
+	3300 3000 3300 3100
+Wire Wire Line
+	3700 3000 3700 3800
+Wire Wire Line
+	2900 4000 3400 4000
+Wire Wire Line
+	2900 3300 3000 3300
+Text GLabel 2500 3300 0    50   Input ~ 0
+pi_02
+Text GLabel 2500 3650 0    50   Input ~ 0
+pi_03
+Text GLabel 2500 4000 0    50   Input ~ 0
+pi_04
+Wire Wire Line
+	2500 3300 2600 3300
+Wire Wire Line
+	2500 3650 2600 3650
+Wire Wire Line
+	2500 4000 2600 4000
+$Comp
+L Connector:Conn_01x04_Male J2
+U 1 1 5C7C47E6
+P 4650 1400
+F 0 "J2" H 4756 1678 50  0000 C CNN
+F 1 "UART" H 4756 1587 50  0000 C CNN
+F 2 "Connector_PinHeader_1.27mm:PinHeader_1x04_P1.27mm_Vertical" H 4650 1400 50  0001 C CNN
+F 3 "~" H 4650 1400 50  0001 C CNN
+	1    4650 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_02x06_Top_Bottom J1
+U 1 1 5C7C4D91
+P 1700 1400
+F 0 "J1" H 1750 1817 50  0000 C CNN
+F 1 "Conn_02x06_Top_Bottom" H 1750 1726 50  0000 C CNN
+F 2 "Connector_PinHeader_1.27mm:PinHeader_2x06_P1.27mm_Vertical" H 1700 1400 50  0001 C CNN
+F 3 "~" H 1700 1400 50  0001 C CNN
+	1    1700 1400
+	1    0    0    -1  
+$EndComp
+Text GLabel 1150 1300 0    50   Input ~ 0
+pi_02
+Wire Wire Line
+	1150 1300 1500 1300
+Text GLabel 1150 1400 0    50   Input ~ 0
+pi_03
+Wire Wire Line
+	1150 1400 1500 1400
+Text GLabel 1150 1500 0    50   Input ~ 0
+pi_04
+Wire Wire Line
+	1150 1500 1500 1500
+$Comp
+L power:+5V #PWR0103
+U 1 1 5C7C5D33
+P 2100 1200
+F 0 "#PWR0103" H 2100 1050 50  0001 C CNN
+F 1 "+5V" V 2115 1328 50  0000 L CNN
+F 2 "" H 2100 1200 50  0001 C CNN
+F 3 "" H 2100 1200 50  0001 C CNN
+	1    2100 1200
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2000 1200 2100 1200
+Wire Wire Line
+	2100 1200 2100 1300
+Wire Wire Line
+	2100 1300 2000 1300
+Connection ~ 2100 1200
+$Comp
+L power:GND #PWR0104
+U 1 1 5C7C651F
+P 2250 1400
+F 0 "#PWR0104" H 2250 1150 50  0001 C CNN
+F 1 "GND" V 2255 1272 50  0000 R CNN
+F 2 "" H 2250 1400 50  0001 C CNN
+F 3 "" H 2250 1400 50  0001 C CNN
+	1    2250 1400
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	2000 1400 2250 1400
+Text GLabel 2100 1500 2    50   Input ~ 0
+TXD
+Wire Wire Line
+	2000 1500 2100 1500
+Text GLabel 2100 1600 2    50   Input ~ 0
+RXD
+Wire Wire Line
+	2000 1600 2100 1600
+Text GLabel 5000 1600 2    50   Input ~ 0
+TXD
+Text GLabel 5000 1500 2    50   Input ~ 0
+RXD
+$Comp
+L power:GND #PWR0105
+U 1 1 5C7C86B7
+P 5000 1300
+F 0 "#PWR0105" H 5000 1050 50  0001 C CNN
+F 1 "GND" V 5005 1172 50  0000 R CNN
+F 2 "" H 5000 1300 50  0001 C CNN
+F 3 "" H 5000 1300 50  0001 C CNN
+	1    5000 1300
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5000 1300 4850 1300
+Wire Wire Line
+	4850 1500 5000 1500
+Wire Wire Line
+	5000 1600 4850 1600
+Wire Wire Line
+	3500 4200 3500 3900
+Wire Wire Line
+	3200 3650 2900 3650
+Wire Wire Line
+	3300 3500 3300 3900
+Wire Wire Line
+	3300 3900 3500 3900
+Connection ~ 3500 3900
+Wire Wire Line
+	3500 3900 3500 3850
+Wire Wire Line
+	3500 3450 3500 3000
+$EndSCHEMATC
