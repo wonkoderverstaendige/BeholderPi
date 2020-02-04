@@ -1,10 +1,10 @@
 import csv
-import time
 import logging
+import subprocess as sp
 import threading
 from queue import Empty
 
-import subprocess as sp
+import numpy as np
 
 from beholder.defaults import *
 
@@ -17,6 +17,9 @@ class Writer(threading.Thread):
 
         self.name = 'Writer #{:02d}'.format(self.id)
         self.writer_pipe = None
+        self.log_file = None
+        self.log_csv = None
+        self.log_csv_header_written = False
         self.logger = None
 
         self.n_frames = 0
@@ -29,6 +32,7 @@ class Writer(threading.Thread):
         self._ev_stop = ev_alive
         self._ev_recording = ev_recording
         self._ev_trial_active = ev_trial_active
+        self.n_retry = 0
 
         self.parent = main_thread
 
@@ -44,17 +48,18 @@ class Writer(threading.Thread):
         logging.debug(' '.join(ffmpeg_cmd))
 
         self.writer_pipe = sp.Popen(ffmpeg_cmd, stdin=sp.PIPE)
-        # # Frame metadata logger output
-        # path_log = fname_base + '.csv'
-        # try:
-        #     self.logger = csv.writer(open(path_log, 'w', newline=''))
-        # except FileNotFoundError:
-        #     logging.error('Failed to open log file at {}'.format(path_log))
-        #     self.stop_recording()
-        #
-        # self.logger.writerow(['index', 'bool_trial', 'timestamp', 'tickstamp'])
+        self.log_file = open(out_path.with_suffix('.meta'), 'w', newline='')
+        self.log_csv = csv.writer(self.log_file)
+        self.log_csv_header_written = False
 
-        self.recording = True
+        # # WARNING: REMOVE ME!
+        # if self.id == 4:
+        #     try:
+        #         self.writer_pipe.terminate()
+        #     except PermissionError:
+        #         pass
+
+        self.recording = self.writer_pipe.poll() is None
 
     def stop_recording(self):
         if self.recording:
@@ -68,36 +73,57 @@ class Writer(threading.Thread):
             self.writer_pipe.wait()
             self.writer_pipe = None
 
+        if self.log_file is not None and not self.log_file.closed:
+            self.log_csv = None
+            self.log_file.close()
+
         self.logger = None
+        self.n_retry = 0
 
     def run(self):
         logging.debug('Starting loop in {}!'.format(self.name))
         try:
             while not self._ev_stop.is_set():
                 try:
-                    self.frame = self.in_queue.get(timeout=.5)
+                    metadata, frame = self.in_queue.get(timeout=.5)
+
                 except Empty:
                     continue
 
                 rec = self._ev_recording.is_set()
                 if self.recording != rec:
-                    if rec:
+                    if rec and self.n_retry < NUM_PIPE_RETRIES:
+                        if self.n_retry:
+                            logging.warning(f'Retry {self.n_retry + 1} to start recording.')
                         self.start_recording()
-                    else:
+                        self.n_retry += 1
+
+                    if rec and self.n_retry == NUM_PIPE_RETRIES:
+                        logging.error('Failed to start recording, maximum number of retries exceeded!')
+                        self.n_retry += 1
+
+                    if not rec and self.recording:
                         self.stop_recording()
 
                 if self.recording:
                     if self.writer_pipe is None:
                         logging.error('Attempted to write to failed Writer!')
-                        self.stop_recording()
+                        self.recording = False
                     else:
-                        self.writer_pipe.stdin.write(self.frame)
-                        # metadata = [self.frame.index, int(self._ev_trial_active.is_set()),
-                        #             self.frame.time_text, self.frame.tickstamp]
-                        # self.logger.writerow(metadata)
+                        try:
+                            self.writer_pipe.stdin.write(frame)
+                        except BrokenPipeError:
+                            logging.error('FFMPEG Pipe closed unexpectedly.')
+                            self.recording = False
+                        else:
+                            if not self.log_csv_header_written:
+                                self.log_csv.writerow(metadata.keys())
+                                self.log_csv_header_written = True
+                            self.log_csv.writerow(metadata.values())
 
             logging.debug('Stopping loop in {}!'.format(self.name))
         except BaseException as e:
             raise e
         finally:
-            self.stop_recording()
+            pass
+            #self.stop_recording()

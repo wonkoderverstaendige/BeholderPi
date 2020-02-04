@@ -46,6 +46,10 @@ def ls_dist(p1, p2, p3):
     return dist, (x, y)
 
 
+def fmt_node(node_name):
+    return '{}{:02d}'.format(str.lower(node_name[0]), int(node_name[1:]))
+
+
 class Tracer:
     def __init__(self, video_path, nodes, node_positions, capture_offset=0):
         self.vid_path = video_path
@@ -84,7 +88,7 @@ class Tracer:
                 self.annotate_frame(self.disp_frame)
                 cv2.imshow('Tracer', self.disp_frame)
 
-            key = cv2.waitKey(5)
+            key = cv2.waitKey(1)
             if key == 27 or key == ord('q'):
                 break
 
@@ -106,7 +110,7 @@ class Tracer:
             self.selected_edge = self.closest_edge(self.clicked_point)
             self.selected_node = self.closest_node(self.clicked_point, self.selected_edge)
             fp = int(self.capture.get(cv2.CAP_PROP_POS_FRAMES))
-            logging.info(f'{str.lower(self.selected_node)} at frame #{fp} @{x}, {y}')
+            logging.info(f'{fmt_node(self.selected_node)} at frame #{fp} @{x}, {y}')
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             self.clicked_point = None
@@ -192,10 +196,13 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--starttime', type=float, help='Start video from time (in second)')
 
     cli_args = parser.parse_args()
+
+    print('Welcome to the manual path tracer. Press [q] or [Esc] to exit.')
+
     vp = Path(cli_args.path).resolve()
 
-    logfile = vp.parent / "{}_tracer.log".format(
-        time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
+    logfile = vp.parent / "{}_tracer_{}.log".format(vp.parent.name,
+                                                    time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time())))
 
     if cli_args.debug:
         logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
