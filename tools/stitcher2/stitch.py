@@ -55,7 +55,6 @@ class SourceView:
             self.transformation = np.array(list(map(float, tf.readline().split(',')))).reshape(3, 3)
         logging.debug(f'Homography matrix: {self.transformation}')
 
-
     def next(self, initial=False):
         if self.__capture is None:
             img = cv2.imread(str(self.path))
@@ -108,6 +107,8 @@ if __name__ == '__main__':
     parser.add_argument('--cropx', nargs=2, type=int, help='crop left and right', default=(0, 0))
     parser.add_argument('--cropy', nargs=2, type=int, help='crop top and bottom', default=(0, 0))
     parser.add_argument('--dry', action='store_true', help='Do not write to disk')
+    parser.add_argument('--name_offset', help="Offset in image filename, makes concatenation easier.", type=int,
+                        default=0)
 
     cli_args = parser.parse_args()
 
@@ -151,12 +152,11 @@ if __name__ == '__main__':
 
     # Skip parameter, skipping every nth frame per source.
     if cli_args.skip is not None:
-        assert(len(cli_args.skip) == len(source_paths))
+        assert (len(cli_args.skip) == len(source_paths))
         skip = list(map(int, cli_args.skip))
     else:
         skip = [0 for n in range(len(source_paths))]
     logging.debug(f'Frame skips: {skip}')
-
 
     # Create Source instances
     sources = []
@@ -211,12 +211,13 @@ if __name__ == '__main__':
             if cli_args.preview:
                 cv2.imshow('Merged', out_img[cy[0]:out_h - cy[1], cx[0]:out_w - cx[1], :].astype('uint8'))
 
-            digits = str(math.ceil(math.log(num_frames, 10)))
+            digits = str(math.ceil(math.log(num_frames + cli_args.name_offset, 10)))
             fmt = 'images{N:0' + digits + 'd}.png'
 
             # Write merged frames to disk
             if not cli_args.dry:
-                cv2.imwrite(str(outdir / fmt.format(N=N)), out_img[cy[0]:out_h - cy[1], cx[0]:out_w - cx[1], :])
+                cv2.imwrite(str(outdir / fmt.format(N=N + cli_args.name_offset)),
+                            out_img[cy[0]:out_h - cy[1], cx[0]:out_w - cx[1], :])
 
             pbar.update(1)
             N += 1
@@ -226,6 +227,6 @@ if __name__ == '__main__':
                 logging.debug('Reached maximum amount of frames to extract. Stopping.')
                 key = ord('q')
 
-            outfile = outdir / ('images%0'+digits+'d.png')
+            outfile = outdir / ('images%0' + digits + 'd.png')
     logging.info(f'Join frames together with "ffmpeg -r 15 -f image2 -i {str(outfile)} -c:v libx264 -crf'
                  ' 18 -r 15 aligned_stitch.mp4"')
