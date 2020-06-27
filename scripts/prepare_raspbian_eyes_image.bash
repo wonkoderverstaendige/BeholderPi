@@ -39,9 +39,14 @@ pi_password_clear="supersecret"
 image_to_download="https://downloads.raspberrypi.org/raspbian_lite_latest"
 github_repo="https://github.com/MemDynLab/BeholderPi.git"
 
+# Get final image and checksum location
+final_image_location="$( curl --silent --location --head --output /dev/null --write-out '%{url_effective}' "${image_to_download}" )"
+echo "OS image location: ${final_image_location}"
+
 # Get SHA-256 for the lite image
 # Lite is currently the third item on the download page
-checksum="$(wget --quiet https://www.raspberrypi.org/downloads/raspbian/ -O - | egrep -m 3 'SHA-256' | awk -F '<|>' '{i++}i==3{print $9}')"
+checksum="$( wget --quiet "${final_image_location}".sha256 -O - | awk '{print $1}' )"
+echo "SHA256 Checksum: "${checksum}""
 
 sdcard_mount="/mnt/beholderpi_sdcard"
 
