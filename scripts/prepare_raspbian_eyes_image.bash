@@ -38,10 +38,13 @@ root_password_clear="correct horse battery staple"
 pi_password_clear="supersecret"
 image_to_download="https://downloads.raspberrypi.org/raspbian_lite_latest"
 github_repo="https://github.com/MemDynLab/BeholderPi.git"
+overwrite_extracted_image=false;
 
 # Get final image and checksum location
 final_image_location="$( curl --silent --location --head --output /dev/null --write-out '%{url_effective}' "${image_to_download}" )"
-echo "OS image location: ${final_image_location}"
+echo "OS image URL: ${final_image_location}"
+final_image_fname="$( basename -- "$final_image_location" )"
+echo "OS image download file: ${final_image_fname}"
 
 # Get SHA-256 for the lite image
 # Lite is currently the third item on the download page
@@ -79,39 +82,43 @@ echo "Using key file pair \"${private_key_file}\" and \"${public_key_file}\""
 echo ""
 
 # Download the latest image, using the  --continue "Continue getting a partially-downloaded file"
-wget --continue ${image_to_download} -O raspbian_lite_image.zip
+wget --continue ${final_image_location} #-O raspi_os_lite.zip
 
 echo "Checking the SHA-256 of the downloaded image matches \"${checksum}\""
 
-if [[ $( sha256sum raspbian_lite_image.zip | grep ${checksum} | wc -l ) -eq "1" ]]
+if [[ $( sha256sum "${final_image_fname}" | grep ${checksum} | wc -l ) -eq "1" ]]
 then
-    echo "The checksums match"
+    echo "The checksums match!"
 else
     echo "The checksums do not match"
     exit 1
 fi
 
-# Following the tutorial
-mkdir ${sdcard_mount}
-
-# unzip
-extracted_image=$( 7z l raspbian_lite_image.zip | awk '/-raspbian-/ {print $NF}' )
+# unzip without additional dependencies...
+extracted_image=$( python3 -m zipfile -l "${final_image_fname}" | tail -n 1 | awk '{print $1}' )
 echo "The name of the image is \"${extracted_image}\""
 
-# to overwrite, -aoa, to skip, -aos
-7z x raspbian_lite_image.zip -aos
+if [[ ! -e ${extracted_image} || $overwrite_extracted_image == true ]]
+then
+	echo "Overwriting image ${extracted_image}"
+	python3 -m zipfile -e ${final_image_fname} .
+fi
 
 if [[ ! -e ${extracted_image} ]]
 then
-    echo "Can't find the image \"${extracted_image}\""
-    exit
+    echo "Extraction of \"${extracted_image}\" failed."
+    exit 
 fi
+
+# Create a temporary image mounting point to manipulate the image content
+mkdir ${sdcard_mount}
 
 echo ""
 echo "Mounting the sdcard boot disk"
-unit_size=$(fdisk --list --units  "${extracted_image}" | awk '/^Units/ {print $(NF-1)}')
+unit_size=$( fdisk --list --units  "${extracted_image}" | awk '/^Units/ {print $(NF-1)}')
 start_boot=$( fdisk --list --units  "${extracted_image}" | awk '/W95 FAT32/ {print $2}' )
 offset_boot=$((${start_boot} * ${unit_size})) 
+echo "Unit size: "${unit_size}"B, start: "${start_boot}", offset: "${offset_boot}""
 mount -o loop,offset="${offset_boot}" "${extracted_image}" "${sdcard_mount}"
 ls -al ${sdcard_mount}
 if [[ ! -e "${sdcard_mount}/kernel.img" ]]
@@ -123,7 +130,7 @@ fi
 touch "${sdcard_mount}/ssh"
 if [[ ! -e "${sdcard_mount}/ssh" ]]
 then
-    echo "Can't find the ssh file \"${sdcard_mount}/ssh\""
+    echo "Couldn't create the ssh file \"${sdcard_mount}/ssh\""
     exit
 fi
 
