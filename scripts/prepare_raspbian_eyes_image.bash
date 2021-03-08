@@ -39,9 +39,9 @@ pi_password_clear="supersecret"
 image_to_download="https://downloads.raspberrypi.org/raspbian_lite_latest"
 github_repo="https://github.com/MemDynLab/BeholderPi.git"
 
-# Get SHA-256 for the lite image
+# Get SHA1 for the lite image
 # Lite is currently the third item on the download page
-checksum="$(wget --quiet https://www.raspberrypi.org/downloads/raspbian/ -O - | egrep -m 3 'SHA-256' | awk -F '<|>' '{i++}i==3{print $9}')"
+checksum="$(wget --quiet https://downloads.raspberrypi.org/raspbian_lite_latest.sha1 -O -| awk '{print $1}')"
 
 sdcard_mount="/mnt/beholderpi_sdcard"
 
@@ -76,9 +76,9 @@ echo ""
 # Download the latest image, using the  --continue "Continue getting a partially-downloaded file"
 wget --continue ${image_to_download} -O raspbian_lite_image.zip
 
-echo "Checking the SHA-256 of the downloaded image matches \"${checksum}\""
+echo "Checking SHA1 of the downloaded image, expecting \"${checksum}\""
 
-if [[ $( sha256sum raspbian_lite_image.zip | grep ${checksum} | wc -l ) -eq "1" ]]
+if [[ $( sha1sum raspbian_lite_image.zip | grep ${checksum} | wc -l ) -eq "1" ]]
 then
     echo "The checksums match"
 else
@@ -87,7 +87,7 @@ else
 fi
 
 # Following the tutorial
-mkdir ${sdcard_mount}
+mkdir -p ${sdcard_mount}
 
 # unzip
 extracted_image=$( 7z l raspbian_lite_image.zip | awk '/-raspbian-/ {print $NF}' )
