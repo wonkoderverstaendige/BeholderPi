@@ -1,16 +1,17 @@
 [Unit]
 Description=Discovery service for BeholderPi clients
-After=network.target
+After=network.target+
+StartLimitBurst=0
+StartLimitIntervalSec=0
 
+# NB: Username needs to match the name used in the generation script
 [Service]
 Type=idle
-User=pi
-WorkingDirectory=/home/pi
-ExecStart=/usr/bin/python3 /home/pi/src/BeholderPi/scripts/services/discovery/beholder_discovery_sender.py > /home/pi/beholder_discovery.log 2>&1
+User=PIUSERNAME
+WorkingDirectory=/home/PIUSERNAME
+ExecStart=/usr/bin/python3 /home/PIUSERNAME/src/BeholderPi/scripts/services/discovery/beholder_discovery_sender.py > /home/PIUSERNAME/beholder_discovery.log 2>&1
 Restart=always
 RestartSec=15
-StartLimitIntervalSec=0
-StartLimitBurst=0
 
 [Install]
 WantedBy=multi-user.target
