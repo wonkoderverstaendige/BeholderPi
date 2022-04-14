@@ -6,9 +6,9 @@ StartLimitBurst=0
 
 [Service]
 Type=idle
-User=PIUSERNAME
-WorkingDirectory=/home/PIUSERNAME
-ExecStart=/usr/bin/python3 /home/PIUSERNAME/beholder_discovery_sender.py > /home/PIUSERNAME/beholder_discovery.log 2>&1
+User=pi
+WorkingDirectory=/home/pi
+ExecStart=/usr/bin/python3 /home/pi/beholder_discovery_sender.py > /home/pi/beholder_discovery.log 2>&1
 Restart=always
 RestartSec=15
 

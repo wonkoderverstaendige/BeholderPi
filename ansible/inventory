@@ -28,4 +28,4 @@ eyes
 new_eyes
 
 [beholderpi:vars]
-ansible_ssh_user=beholder
+ansible_ssh_user=pi

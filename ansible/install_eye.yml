@@ -1,6 +1,6 @@
 ---
 - hosts: new_eyes, eyes
-  remote_user: beholder
+  remote_user: pi
   become: true
   vars_files:
     - vars_eyes.yml
@@ -34,7 +34,7 @@
     - name: Network | Set up SSH configuration
       template:
         src: "templates/ssh_config.j2"
-        dest: /home/beholder/.ssh/config
+        dest: /home/pi/.ssh/config
         mode: 0644
 
 ########################### SYSTEM SETUP ###########################
@@ -61,7 +61,7 @@
           - python3-apt
           - python-setuptools  # workaround for ansible checking setuptools of the wrong python version!
           - libzbar0
-          - influxdb
+#          - influxdb
         state: present
 
     - name: System setup | Install pip packages
@@ -139,29 +139,29 @@
 ########################### SOURCE/GIT ###########################
 
     - name: Git setup | Create 'src' directory
-      become_user: beholder
+      become_user: pi
       file:
-        path: /home/beholder/src
+        path: /home/pi/src
         state: directory
 
     - name: Git setup | Clone BeholderPi GitHub repository
-      become_user: beholder
+      become_user: pi
       git:
         repo: https://github.com/wonkoderverstaendige/BeholderPi
-        dest: /home/beholder/src/BeholderPi
+        dest: /home/pi/src/BeholderPi
         update: yes
       register: service_restart
 
     - name: Git setup | Add spectator as remote git repo
-      become_user: beholder
-      command: git remote add spectator ssh://10.0.0.1/home/beholder/src/BeholderPi chdir=/home/beholder/src/BeholderPi
+      become_user: pi
+      command: git remote add spectator ssh://10.0.0.1/home/pi/src/BeholderPi chdir=/home/pi/src/BeholderPi
       ignore_errors: yes
 
 ########################### BEHOLDER SERVICES ###########################
 
     - name: Beholder services | Create symbolic link
       file:
-        src: "/home/beholder/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
+        src: "/home/pi/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
         dest: "/etc/systemd/system/beholder_streaming.service"
         state: link
 

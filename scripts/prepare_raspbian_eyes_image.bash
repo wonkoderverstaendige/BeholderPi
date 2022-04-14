@@ -35,12 +35,12 @@ echo "Scripts path at ${scripts_path}"
 
 # Change these
 sdcard_mount="/mnt/beholderpi_sdcard"
-user_name="beholder"  # NB! Changing the user name here requires changes in the systemd unit files
+user_name="pi"  # NB! Changing the user name here requires changes in the systemd unit files
 root_password_clear="correct horse battery staple"
 user_password_clear="supersecret"
 root_password_crypt="$( python3 -c "import crypt; print(crypt.crypt('${root_password_clear}', crypt.mksalt(crypt.METHOD_SHA512)))" )"
 user_password_crypt="$( python3 -c "import crypt; print(crypt.crypt('${user_password_clear}', crypt.mksalt(crypt.METHOD_SHA512)))" )"
-image_url="https://downloads.raspberrypi.org/raspios_lite_armhf_latest"
+image_url="https://downloads.raspberrypi.org/raspios_oldstable_lite_armhf_latest"
 #github_repo="https://github.com/MemDynLab/BeholderPi.git"
 overwrite_extracted_image=false
 
@@ -123,7 +123,7 @@ then
 elif [[ ${image_name_resolved} == *.xz ]]
 then
   echo "Unpacking xz file"
-  #xz --decompress -v --keep --force "${image_name_resolved}"
+  xz --decompress -v --keep --force "${image_name_resolved}"
   extracted_image="${image_name_resolved%.*}"
 else
   echo "Downloaded archive has unknown file format."
@@ -197,6 +197,7 @@ chown -R 1000:1000 "${sdcard_mount}/home/${user_name}/.ssh"
 chmod 0644 "${sdcard_mount}/home/${user_name}/.ssh/authorized_keys"
 echo "Setting permission on ${sdcard_mount}/home/${user_name}/.ssh/$( basename -- "${private_key_file}" )"
 chmod 0600 "${sdcard_mount}/home/${user_name}/.ssh/$( basename -- "${private_key_file}" )"
+# TODO: Home directory ends up being owned by root - change now or later?
 
 # Clone github repository
 #src_dir="${sdcard_mount}/home/${user_name}/src"
