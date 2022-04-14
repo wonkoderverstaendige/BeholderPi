@@ -5,6 +5,7 @@ import socket
 import time
 import sys
 import json
+import uuid
 
 if len(sys.argv) > 1:
     HOST = sys.argv[1]
@@ -20,26 +21,24 @@ SEND_INTERVAL = 1
 TYPE = 'UDP'
 
 
-def my_ip():
-    # NB: This causes issue when the hostname is not configured properly
-    # return (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [
-    #     [(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
-    #      [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0] + '\n'
-
-    # This still works
+def get_ip():
     return (([[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
                [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
 
 
-def my_hostname():
+def get_hostname():
     return socket.gethostname()
 
 
+def get_mac():
+    mac = str(hex(uuid.getnode()))[2:]
+    return ":".join([mac[i:i+2] for i in range(0, len(mac), 2)])
+
+
 def gather_info():
-    # TODO: Gather MAC of primary interface, relevant for eye discovery
-    info = {'ip': my_ip(),
-            'hostname': my_hostname(),
-            'mac': '00:00:00:00:00:00',
+    info = {'ip': get_ip(),
+            'hostname': get_hostname(),
+            'mac': get_mac(),
             'localtime': time.time()
             }
     return info
@@ -68,11 +67,11 @@ def serve_tcp():
 
 
 def serve_udp():
+    # TODO: Needs error checking and reconnect on connection change
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         while True:
             info_json = json.dumps(gather_info())
-            # print('Sending', info_json)
             s.sendto(str.encode(info_json), ('<broadcast>', UDP_PORT))
             time.sleep(SEND_INTERVAL)
 

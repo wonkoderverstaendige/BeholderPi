@@ -56,8 +56,8 @@ def update_loop(stdscr, ev_stop, client_dict):
 
     columns = [('hostname', 'Hostname', 17),
                ('src_ip', 'Source IP', 18),
-               # ('mac', 'MAC', 19),
-               ('tzdelta', 'Delta', 9),
+               ('mac', 'MAC', 19),
+               ('tzdelta', 'Delta', 10),
                ('last_seen', 'Seen', 7),
                ('status', 'Status', 10)]
 
