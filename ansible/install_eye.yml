@@ -1,6 +1,6 @@
 ---
 - hosts: new_eyes, eyes
-  remote_user: pi
+  remote_user: beholder
   become: true
   vars_files:
     - vars_eyes.yml
@@ -34,7 +34,7 @@
     - name: Network | Set up SSH configuration
       template:
         src: "templates/ssh_config.j2"
-        dest: /home/pi/.ssh/config
+        dest: /home/beholder/.ssh/config
         mode: 0644
 
 ########################### SYSTEM SETUP ###########################
@@ -139,29 +139,29 @@
 ########################### SOURCE/GIT ###########################
 
     - name: Git setup | Create 'src' directory
-      become_user: pi
+      become_user: beholder
       file:
-        path: /home/pi/src
+        path: /home/beholder/src
         state: directory
 
     - name: Git setup | Clone BeholderPi GitHub repository
-      become_user: pi
+      become_user: beholder
       git:
         repo: https://github.com/wonkoderverstaendige/BeholderPi
-        dest: /home/pi/src/BeholderPi
+        dest: /home/beholder/src/BeholderPi
         update: yes
       register: service_restart
 
     - name: Git setup | Add spectator as remote git repo
-      become_user: pi
-      command: git remote add spectator ssh://10.0.0.1/home/pi/src/BeholderPi chdir=/home/pi/src/BeholderPi
+      become_user: beholder
+      command: git remote add spectator ssh://10.0.0.1/home/beholder/src/BeholderPi chdir=/home/beholder/src/BeholderPi
       ignore_errors: yes
 
 ########################### BEHOLDER SERVICES ###########################
 
     - name: Beholder services | Create symbolic link
       file:
-        src: "/home/pi/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
+        src: "/home/beholder/src/BeholderPi/scripts/services/streaming/beholder_streaming.service"
         dest: "/etc/systemd/system/beholder_streaming.service"
         state: link
 
@@ -184,63 +184,63 @@
 
 ########################### TELEMETRY ###########################
 
-    - name: Telemetry | Check if telegraf is running
-      systemd:
-        name: telegraf
-        state: started
-      register: telegraf_install_required
-      ignore_errors: True
-
-    - name: Telemetry | Install InfluxDB repository key
-      apt_key:
-        url: https://repos.influxdata.com/influxdb.key
-        state: present
-      when: telegraf_install_required
-
-    - name: Telemetry | Add InfluxDB repository deb
-      apt_repository:
-        repo: deb https://repos.influxdata.com/debian stretch stable
-        state: present
-      when: telegraf_install_required
-
-    - name: Telemetry | Install telegraf
-      apt:
-        pkg: telegraf
-        state: present
-      when: telegraf_install_required
-
-    - name: Telemetry | Adding telegraf user to video group
-      user:
-        name: telegraf
-        groups: video
-        append: yes
-
-    - name: Telemetry | Check for telegraf.conf symbolic link status
-      stat: path=/etc/telegraf/telegraf.conf
-      register: telegraf_conf_link
-
-    - name: Telemetry | Link repo telegraf configuration file
-      command: mv /etc/telegraf/telegraf.conf /etc/telegraf/telegraf.bak
-      when: telegraf_conf_link.stat.islnk is defined and not telegraf_conf_link.stat.islnk
-
-    - name: Telemetry | Create symbolic telegraf.conf link from git repo
-      file:
-        src: "/home/pi/src/BeholderPi/piEye/resources/telegraf.conf"
-        dest: "/etc/telegraf/telegraf.conf"
-        state: link
-
-    - name: Telemetry | Set up influxdb credentials
-      template:
-        src: "templates/{{ item.template }}"
-        dest: "{{ item.dest }}"
-        mode: 0644
-      with_items:
-        - { template: default.telegraf.j2, dest: /etc/default/telegraf }
-
-    - name: Telemetry | Restart telegraf
-      systemd:
-        name: telegraf
-        state: restarted
+#    - name: Telemetry | Check if telegraf is running
+#      systemd:
+#        name: telegraf
+#        state: started
+#      register: telegraf_install_required
+#      ignore_errors: True
+#
+#    - name: Telemetry | Install InfluxDB repository key
+#      apt_key:
+#        url: https://repos.influxdata.com/influxdb.key
+#        state: present
+#      when: telegraf_install_required
+#
+#    - name: Telemetry | Add InfluxDB repository deb
+#      apt_repository:
+#        repo: deb https://repos.influxdata.com/debian stretch stable
+#        state: present
+#      when: telegraf_install_required
+#
+#    - name: Telemetry | Install telegraf
+#      apt:
+#        pkg: telegraf
+#        state: present
+#      when: telegraf_install_required
+#
+#    - name: Telemetry | Adding telegraf user to video group
+#      user:
+#        name: telegraf
+#        groups: video
+#        append: yes
+#
+#    - name: Telemetry | Check for telegraf.conf symbolic link status
+#      stat: path=/etc/telegraf/telegraf.conf
+#      register: telegraf_conf_link
+#
+#    - name: Telemetry | Link repo telegraf configuration file
+#      command: mv /etc/telegraf/telegraf.conf /etc/telegraf/telegraf.bak
+#      when: telegraf_conf_link.stat.islnk is defined and not telegraf_conf_link.stat.islnk
+#
+#    - name: Telemetry | Create symbolic telegraf.conf link from git repo
+#      file:
+#        src: "/home/pi/src/BeholderPi/piEye/resources/telegraf.conf"
+#        dest: "/etc/telegraf/telegraf.conf"
+#        state: link
+#
+#    - name: Telemetry | Set up influxdb credentials
+#      template:
+#        src: "templates/{{ item.template }}"
+#        dest: "{{ item.dest }}"
+#        mode: 0644
+#      with_items:
+#        - { template: default.telegraf.j2, dest: /etc/default/telegraf }
+#
+#    - name: Telemetry | Restart telegraf
+#      systemd:
+#        name: telegraf
+#        state: restarted
 
 
 ########################### HANDLERS ###########################

@@ -5,7 +5,7 @@
 10.0.0.1
 
 [new_eyes]
-131.174.140.240
+192.168.188.68
 
 [eyes]
 10.0.0.101
@@ -28,4 +28,4 @@ eyes
 new_eyes
 
 [beholderpi:vars]
-ansible_ssh_user=pi
+ansible_ssh_user=beholder
