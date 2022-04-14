@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 Type=idle
-User=pi
-WorkingDirectory=/home/pi
-ExecStart=/usr/bin/python3 /home/pi/src/BeholderPi/piEye/main.py
+User=beholder
+WorkingDirectory=/home/beholder
+ExecStart=/usr/bin/python3 /home/beholder/src/BeholderPi/piEye/main.py
 
 [Install]
 WantedBy=multi-user.target
