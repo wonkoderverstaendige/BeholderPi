@@ -1,0 +1,8 @@
+WIFI_SSID:
+  - ""
+
+WIFI_PSK:
+  - ""
+
+WIFI_COUNTRY:
+  - "NL"

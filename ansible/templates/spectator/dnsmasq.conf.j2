@@ -1,0 +1,61 @@
+# Configuration file for dnsmasq.
+#
+# Format is one option per line, legal options are the same
+# as the long options legal on the command line. See
+# "/usr/sbin/dnsmasq --help" or "man 8 dnsmasq" for details.
+
+# listen for DHCP and DNS requests only on
+interface=eth0
+except-interface=wlan0
+
+# Disable DNS server to make it easier for dual-LAN connection
+# beholder to not have their internet messed with
+port=0
+
+# Set the domain for dnsmasq. this is optional
+domain=pi
+
+# Disable local hosts file?
+no-hosts
+
+# Dynamic DHCP range for unconfigured/other devices
+dhcp-range=10.0.0.2,10.0.0.99,1h
+
+# PXE BOOT
+enable-tftp
+tftp-root=/tftpboot
+tftp-unique-root=ip
+pxe-service=0,"Raspberry Pi Boot"
+
+# Static DHCP range for the eyes in their final network configuration
+#dhcp-range=10.0.0.100,10.0.0.130,static,240h
+
+# Always allocate
+#dhcp-host=d8:9d:67:c6:56:02,antigoon,10.0.0.11
+dhcp-host=70:85:C2:B3:7E:ED,beholder,10.0.0.11,infinite
+dhcp-host=F0:2F:74:1C:18:79,affluentcockle,10.0.0.12,infinite
+dhcp-host=dc:a6:32:4d:eb:77,eye01,10.0.0.101
+dhcp-host=dc:a6:32:0e:57:c3,eye02,10.0.0.102
+dhcp-host=DC:A6:32:0E:5B:37,eye03,10.0.0.103
+dhcp-host=dc:a6:32:0e:2c:c7,eye04,10.0.0.104
+dhcp-host=eye05,10.0.0.105
+dhcp-host=eye06,10.0.0.106
+dhcp-host=eye07,10.0.0.107
+dhcp-host=eye08,10.0.0.108
+dhcp-host=eye09,10.0.0.109
+dhcp-host=eye10,10.0.0.110
+dhcp-host=eye11,10.0.0.111
+dhcp-host=eye12,10.0.0.112
+dhcp-host=eye13,10.0.0.113
+
+# For debugging purposes, log each DNS query as it passes through
+# dnsmasq.
+log-queries
+
+# Log lots of extra information about DHCP transactions.
+log-dhcp
+
+# Delays sending DHCPOFFER and proxydhcp replies for at least the specified number of seconds.
+dhcp-mac=set:client_is_a_pi,b8:27:eb:*:*:*
+dhcp-mac=set:client_is_a_pi,dc:a6:32:*:*:*
+dhcp-reply-delay=tag:client_is_a_pi,2

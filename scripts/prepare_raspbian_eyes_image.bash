@@ -44,16 +44,6 @@ image_url="https://downloads.raspberrypi.org/raspios_oldstable_lite_armhf_latest
 #github_repo="https://github.com/MemDynLab/BeholderPi.git"
 overwrite_extracted_image=false
 
-# Resolve redirect
-image_url_resolved="$( curl --silent --location --head --output /dev/null --write-out '%{url_effective}' "${image_url}" )"
-echo "OS image URL: ${image_url_resolved}"
-image_name_resolved="$( basename -- "$image_url_resolved" )"
-echo "OS image download file: ${image_name_resolved}"
-
-# Get SHA1 for the lite image
-# Lite is currently the third item on the download page
-checksum="$(wget --quiet ${image_url}.sha1 -O -| awk '{print $1}')"
-
 # Availability of SSH key files (private and public)
 if [[ "$1" != "" ]]
 then
@@ -82,6 +72,39 @@ fi
 
 echo "Using key file pair \"${private_key_file}\" and \"${public_key_file}\""
 echo ""
+
+
+# Resolve Image URL redirect
+if ! command -v curl >/dev/null 2>&1
+then
+  echo >&2 "Curl not installed. Aborting."
+
+else
+  echo >&2 "Using curl to resolve image url redirect..."
+  if ! image_url_resolved="$( curl --silent --location --head --output /dev/null --write-out '%{url_effective}' ${image_url} )"
+  then
+    echo "CURL FAILED!"
+  fi
+fi
+
+echo "${image_url_resolved}"
+if [ -z "${image_url_resolved}" ]
+then
+  echo >&2 "Couldn't resolve image URL '${image_url}'. Aborting."
+  exit 1
+fi
+
+
+
+
+echo "OS image URL: ${image_url_resolved}"
+image_name_resolved="$( basename -- "$image_url_resolved" )"
+echo "OS image download file: ${image_name_resolved}"
+
+# Get SHA1 for the lite image
+# Lite is currently the third item on the download page
+checksum="$(wget --quiet ${image_url}.sha1 -O -| awk '{print $1}')"
+
 
 # Download the latest image, continue getting a partially-downloaded file (for shaky wifi)
 wget --continue "${image_url_resolved}"

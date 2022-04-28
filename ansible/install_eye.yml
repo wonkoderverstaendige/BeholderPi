@@ -2,10 +2,18 @@
 - hosts: new_eyes, eyes
   remote_user: pi
   become: true
-  vars_files:
-    - vars_eyes.yml
+#  vars_files:
+#    - vars_eyes-local.yml
+# NOTE: SPECIFY VARS ON COMMAND LINE CALL
+  gather_facts: false  # prevent initial connection before host verification sorted out
 
   tasks:
+########################### BOOTSTRAPPING ################### see https://stackoverflow.com/a/54735937
+    - name: Ignore SSH host key check
+      set_fact:
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    - name: gather facts now
+      setup:
 
 ########################### NETWORK SETUP ###########################
 
@@ -50,6 +58,7 @@
     - name: System setup | Install basic packages
       apt:
         pkg:
+          - rpi-eeprom
           - vim
           - chrony
           - git
@@ -60,7 +69,6 @@
           - python3-zmq
           - python3-apt
           - python-setuptools  # workaround for ansible checking setuptools of the wrong python version!
-          - libzbar0
 #          - influxdb
         state: present
 
@@ -68,8 +76,6 @@
       pip:
         name:
           - pyyaml
-#          - pyzbar
-#          - Pillow
         executable: pip3
 
     - name: System setup | Enable the raspberry camera
@@ -180,7 +186,6 @@
         name: beholder_discovery_sender
         enabled: yes
         state: restarted
-
 
 ########################### TELEMETRY ###########################
 

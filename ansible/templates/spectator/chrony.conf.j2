@@ -1,0 +1,12 @@
+# Spectator uses Beholder as the chrony source
+
+pool 2.debian.pool.ntp.org iburst
+server 10.0.0.11 iburst
+
+keyfile /etc/chrony/chrony.keys
+driftfile /var/lib/chrony/chrony.drift
+logdir /var/log/chrony
+
+maxupdateskew 100.0
+rtcsync
+makestep 1 3
