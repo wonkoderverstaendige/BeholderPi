@@ -112,7 +112,7 @@
 
     - name: Time & NTP | Copy chrony (ntp) configuration
       template:
-        src: eye_chrony.conf.j2
+        src: "templates/eye/chrony.conf.j2"
         dest: /etc/chrony/chrony.conf
         mode: 0644
 

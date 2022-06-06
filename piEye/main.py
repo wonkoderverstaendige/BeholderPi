@@ -189,9 +189,9 @@ def main(cfg):
             # socks = dict(poller.poll())
             # if receiver in socks and socks[receiver] == zmq.POLLIN:
             #     message = receiver.recv()
-            #     print("Recieved control command: %s" % message)
+            #     print("Received control command: %s" % message)
             #     if message == "Exit":
-            #         print("Recieved exit command, client will stop recieving messages")
+            #         print("Received exit command, client will stop receiving messages")
             #         alive = False
 
         logging.debug('Acquisition loop exited')

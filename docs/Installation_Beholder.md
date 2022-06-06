@@ -1,3 +1,8 @@
+# Visualizer Installation
+`conda create -n beholderpi`
+`pip install -e .`
+
+
 # Hardware
 
 
@@ -5,7 +10,6 @@
 
 - default Ubuntu 18.04
 - install drivers for r8125 NIC
-
 - install new nvidia drivers (418)
 
 ##### THIS IS IMPORTANT FOR HARDWARE ACCELERATION TO WORK!

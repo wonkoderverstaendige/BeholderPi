@@ -6,6 +6,9 @@ It copies files required for the initial services, enables ssh, copies ssh keys 
 Running the script will require `sudo`, as does flashing to SD card. When flashing with the official flasher,
 make sure not to modify any of the configuration there as it may override changes made by us. 
 
+# Discovery of Pi
+
+
 # Ansible setup
 From a linux machine with ansible installed, run the following from outside the `BeholderPi/ansible` directory
 (ansible does not like running from the working directory containing the playbook).

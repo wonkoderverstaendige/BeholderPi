@@ -43,7 +43,6 @@ or copy from own root:
 
 Permissions are important - `/usr/bin/sudo` must be owned by root and `chmod 4577` to work, home should be owned by `pi`
 
-
 ## Individual NFS roots
 For each client create a NFS mount via copy from base image
 

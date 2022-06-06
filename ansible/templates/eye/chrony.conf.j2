@@ -1,8 +1,6 @@
-# Synchronize to Beholder or Spectator
+# Synchronize to Beholder (10.0.0.11) or Spectator (10.0.0.1)
 server 10.0.0.11 iburst maxpoll 0 minpoll 0 prefer
 server 10.0.0.1 iburst maxpoll 0 minpoll 0
-
-driftfile /var/lib/chrony/chrony.drift
 
 # Step the system clock instead of slewing it if the adjustment is large
 makestep 1 100
