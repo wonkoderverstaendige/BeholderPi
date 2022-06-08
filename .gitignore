@@ -11,6 +11,8 @@ ansible/vars_spectator-local.yml
 # Ansible retry files
 *.retry
 
+# VSCode
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
