@@ -204,7 +204,26 @@ class Beholder:
             cv2.putText(frame, f'{t_str[3:5]}min{t_str[6:8]}s', (15, 320), fontFace=FONT, fontScale=4.5,
                         color=(255, 255, 255), thickness=4)
 
+        # Draw alignment markers
+        # Recording status indicator
+        if self.cfg['alignment_markers']:
+            for row in range(self.n_rows):
+                for col in range(self.n_cols):
+                    cx = col * self.cropped_frame_width
+                    cy = row * self.cropped_frame_height
+                    num = 8
+                    rh = self.cropped_frame_height//num
+                    rw = self.cropped_frame_width//num
+                    for n in range(num):
+                        cv2.line(frame, (cx+n*rw, cy), (cx+n*rw, cy+self.cropped_frame_height), (0, 0, 255))
+                        cv2.line(frame, (cx, cy+n*rh), (cx+self.cropped_frame_width, cy+n*rh), (0, 0, 255))
+
+                    cross_size = 50
+                    cv2.line(frame, (cx + self.cropped_frame_width//2-cross_size//2, cy + self.cropped_frame_height//2), (cx + self.cropped_frame_width//2+cross_size//2, cy + self.cropped_frame_height//2), (0, 255, 255))
+                    cv2.line(frame, (cx + self.cropped_frame_width//2, cy + self.cropped_frame_height//2-cross_size//2), (cx + self.cropped_frame_width//2, cy + self.cropped_frame_height//2+cross_size//2), (0, 255, 255))
+
     def process_events(self):
+        """Handle user input"""
         key = cv2.waitKey(30)
 
         if key == ord('q'):
@@ -337,6 +356,7 @@ def main():
     parser.add_argument('-o', '--output', help='Location to store output in', default='~/Videos/beholder')
     parser.add_argument('-c', '--config', help='Non-default configuration file to use')
     parser.add_argument('--no_crop', help='Override crop options, show full frames.', action='store_true')
+    parser.add_argument('--alignment', help='Draw alignment markers on the frame', action='store_true')
 
     cli_args = parser.parse_args()
 
@@ -402,6 +422,8 @@ def main():
         logging.debug('Overriding cropping parameters. Showing full frames.')
         cfg['frame_crop_x'] = 0
         cfg['frame_crop_y'] = 0
+
+    cfg['alignment_markers'] = cli_args.alignment
 
     beholder = Beholder(cfg)
     beholder.loop()
