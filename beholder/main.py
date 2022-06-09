@@ -192,7 +192,7 @@ class Beholder:
 
                 cv2.circle(frame, (cx, cy), 20, color=status_color, thickness=-1)
 
-                cv2.putText(frame, str(n_cam), (cx - 2 - 8 * (len(str(n_cam))), cy + 10), fontFace=FONT,
+                cv2.putText(frame, str(n_cam+1), (cx - 2 - 8 * (len(str(n_cam))), cy + 10), fontFace=FONT,
                             fontScale=2, color=(255, 255, 255), thickness=2)
 
         # trial duration stopwatch
