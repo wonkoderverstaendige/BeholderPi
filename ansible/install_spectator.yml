@@ -75,7 +75,7 @@
 
     - name: Network | disable dhcpcd service
       systemd:
-        name: systemd-networkd
+        name: dhcpcd
         enabled: no
         state: stopped
 

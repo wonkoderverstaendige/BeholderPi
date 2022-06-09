@@ -83,21 +83,23 @@ and then some manual moving + chowning to `root:root`.
 
 Edit kernel parameters in `/tftpboot/cmdline.txt`:
 
-`console=serial0,115200 console=tty1 root=/dev/nfs 
-nfsroot=10.0.0.1:/nfs/eye03,vers=3 rw ip=dhcp rootwait elevator=deadline`
+```console=serial0,115200 console=tty1 root=/dev/nfs 
+nfsroot=10.0.0.1:/nfs/eye03,vers=3 rw ip=dhcp rootwait elevator=deadline```
 
 ## NFS
 Add exports in `/etc/exports`:
 
-`/nfs/eyeXX *(rw,sync,no_subtree_check,no_root_squash)
-/tftpboot *(rw,sync,no_subtree_check,no_root_squash)`
+```
+/nfs/eyeXX *(rw,sync,no_subtree_check,no_root_squash)
+/tftpboot *(rw,sync,no_subtree_check,no_root_squash)
+```
 
 edit `/nfs/eyeXX/etc/fstab`:
 
 `proc       /proc        proc     defaults    0    0
 10.0.0.1:/tftpboot /boot nfs defaults,vers=3 0 0`
 
-Enable services
+# Enable services
 
 `sudo systemctl enable rpcbind
 sudo systemctl restart rpcbind
