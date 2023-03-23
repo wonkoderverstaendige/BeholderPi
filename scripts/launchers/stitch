@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+~/anaconda3/envs/beholderpi/bin/python ~/src/BeholderPi/tools/stitcher/join_views.py "$@"
