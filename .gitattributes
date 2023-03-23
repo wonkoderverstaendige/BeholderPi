@@ -1,0 +1,2 @@
+# don't count the demo notebooks into language stats
+*.ipynb linguist-vendored
