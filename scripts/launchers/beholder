@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-~/anaconda3/envs/beholderpi/bin/python ~/src/BeholderPi/beholder/main.py "$@"
+~/anaconda3/envs/beholder/bin/python ~/src/BeholderPi/beholder/main.py "$@"

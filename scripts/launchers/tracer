@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-~/anaconda3/envs/beholderpi_openblas/bin/python ~/src/BeholderPi/tools/tracer.py "$@"
+~/anaconda3/envs/beholder/bin/python ~/src/BeholderPi/tools/tracer.py "$@"
