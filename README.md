@@ -1,107 +1,53 @@
+![BeholderPi logo](C:\Users\reichler\src\BeholderPi\docs\images\BeholderPiLogo.svg.png "BeholderPI logo")
+
 # BeholderPi
 piEye of the Beholder
 
-
 # Outline
 
-- array of ~8 camera nodes covering a 5 m * 10 m space with small overlap in FOV
-
-- reliable recording for offline analysis, either
-    a) local to the raspberry (USB drive, SD card)
-    b) remotely by master computer after streaming
-
-- minimally 640x480 @ 15 fps, better 720p30 if possible
-
-- for online scoring, we want a live stream, stitching the individual views
-
-- low latency, no (few) dropped frames
-
-- common reference frame for timestamps across all cameras
-
-- synchronizable to external system (e.g. ephys)
-
-There's hundreds of ways and options to go about streaming the video. Most importantly, encoding/decoding needs to be done in hardware, so it needs libraries/tools that support the Raspberry hardware.
-
-FFMPEG can read from V4L2 driver, I got RTSP to work, but with lag. I needed to increase the key frame interval, or the stream got corrupted.
-
-Raspivid is the tool provided to easily interface the camera module. It can directly grab the JPEG or x264 frames without the need to decode/reencode the frames.
-
-We could grab the frame in raspivid and relay the x264 frame directly via e.g. ZMQ to a master PC that stitches and transcodes/stores.
+- scalable array of networked camera nodes
+- low-cost (relatively) ~100--200 Euro/node
+- 800x600 @ 30 fps in visible or IR
+- low latency preview of merged views
+- synchronized to sub-millisecond time resolution
+- hardware accelerated encoding
+- synchronization with external systems (e.g. elecrophysiology recordings)
 
 # Hardware
 
-- [RaspberryPi 3B+](https://www.raspberrypi.org/documentation/hardware/raspberrypi/README.md)
-	- ~250-300 Mbit ethernet
-	- 1 GByte RAM
-- [PiCamera v2.1](https://www.raspberrypi.org/documentation/hardware/camera/README.md)
-	- FOV: 62.2° horizontal, , 48.8° vertical
+- [RaspberryPi 3B+/4B](https://www.raspberrypi.org/documentation/hardware/raspberrypi/README.md)
+- [Raspberry/Picamera compatible camera module](https://www.raspberrypi.org/documentation/hardware/camera/README.md)
+    - e.g. Camera Module v2 (8MP, FOV: 62.2° horizontal, 48.8° vertical)
+    - **Read: ** [How the PiCamera works](https://picamera.readthedocs.io/en/release-1.13/fov.html)
 - [PoE hat](https://www.raspberrypi.org/products/poe-hat/) for power/network
-
-
-**Read: ** [How the PiCamera works](https://picamera.readthedocs.io/en/release-1.13/fov.html)
+- A decent receiving computer (ideally 1 CPU core/node)
+- optional hardware encoding GPU
+- PoE capable ethernet switch if PoE is used
 
 # Software
-
-- Raspian Stretch Lite
-- Camera -> CSI -> GPU -> OpenMAX -> [MMAL](https://github.com/techyian/MMALSharp/wiki/What-is-MMAL%3F) -> raspivid/v4l2/uvc/python
-- `raspivid` to grab/display/stream/store frames from PiCamera
+- based on Picamera, ZMQ, OpenCV, FFmpeg
 
 # Inspiration
-
 ## Raspicam paper
-There's some prior work done by [Saxena et al. 2018](https://www.physiology.org/doi/full/10.1152/jn.00215.2018), [code here](https://github.com/DeshmukhLab/PicameraPaper). They however record videos only localy for offline analysis.
-
-## Netcat stream forwarding
-
-https://dantheiotman.com/2017/08/23/using-raspivid-for-low-latency-pi-zero-w-video-streaming/
-
-## Raspivid
-[Documentation](https://www.raspberrypi.org/documentation/usage/camera/raspicam/raspivid.md)
-[Source]()
-
+Inspiration of the system was taken from prior work done by [Saxena et al. 2018](https://www.physiology.org/doi/full/10.1152/jn.00215.2018),
+[code here](https://github.com/DeshmukhLab/PicameraPaper).
 
 # Installation
+1) [System Overview](docs/SystemOverview.md)
+2) [Beholder Installation](docs/Installation_Beholder.md)
+3) [Eye Installation](docs/Installation_Eye.md)
+4) [General Usage](docs/Usage.md)
+5) [Troubleshooting](docs/Troubleshooting.md)
 
 ## Hardware
+- [Camera Mounts](docs/CameraMounts.md)
+- [Sync Lights](docs/SyncLights.md)
 
-- screw in spacers
-- open camera FPC cable slot
-- attach PoE hat, carefully aligning the standoffs and headers
-- slide in camera flat cable, shiny silver pins facing towards HDMI connector
-- gently press down FPC lever with blade from top
-- attach keyboard, mouse, ethernet and/or power, HDMI
+## Processing
+- [Stitching](docs/processing/Stitching.md)
+- [Synchronization](docs/Synchronization.md)
+- [Tracing](docs/Tracing.md)
+- [Tracking](docs/Tracking.md)
 
-## Raspbian
-
-- download and flash [Raspbian Stretch lite](https://www.raspberrypi.org/downloads/raspbian/) to microSD card (e.g. using [Etcher](etcher.io))
-- check boot screen for obvious errors
-- log in with `pi:raspberry`
-- Configure with `sudo rapsi-config`:
-	- set locale (Localisation -> Keyboard Layout -> US, by default, keyboard is UK mapping!! Beware for password!)
-	- enable camera (Interfacing -> Camera)
-	- enable ssh (Interfacing -> SSH)
-
-- change passord with `passwd`
-- connect to network with internet access
-- update/upgrade: `sudo apt update && sudo apt upgrade
-- Install general tools: `sudo apt install byobu htop vim git`
-- test camera with `raspivid -t 0`
-- edit `/etc/dhcpcd.conf` to set up static IP fallback for local network
-
-## Picamera/Python
-- `sudo apt install python3-pip python3-picamera python3-zmq`
-
-## Beholder/piEye module
-- `mkdir -p ~/src/ && cd ~/src`
-- `git clone https://github.com/MemDynLab/BeholderPi.git`
-
-## Telegraf
-
-# Ansible
-- playbooks for setup and updates/maintenance of the above
-  - SSH key distribution
-
-# TODO:
-- grab in YUV, drop UV, raw grayscale -> write to grayscale x264 directly. All buffersizes known, no decoding step.
-- set up NTP server on master, slaves `iburst` synchronize on startup
-- fuzz for corner cases when recording and clients drop out
+# TODO
+- see [current todo list](docs/todo.md)
