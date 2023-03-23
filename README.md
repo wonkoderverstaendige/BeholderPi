@@ -1,4 +1,4 @@
-![BeholderPi logo](docs\images\BeholderPiLogo.svg.png "BeholderPI logo")
+![BeholderPi logo](docs/images/BeholderPiLogo.svg.png "BeholderPI logo")
 
 # BeholderPi
 piEye of the Beholder
