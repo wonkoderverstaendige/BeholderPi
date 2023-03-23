@@ -24,13 +24,12 @@ See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu
 - `sudo dpkg -i cuda-keyring_1.0-1_all.deb`
 - `echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /" | sudo tee /etc/apt/sources.list.d/cuda-ubuntu2204-x86_64.list`
 
-pin file to prioritize CUDA repo:
+Pin file to prioritize CUDA repo, then install CUDA:
 - `wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin`
 - `sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600`
-Install CUDA
 - `sudo apt update && sudo apt install cuda`
 - Reboot
-- Add cuda to PATH
+- Add CUDA to PATH in `.bashrc`, else `nvcc` won't be found
   - `PATH="/usr/local/cuda/bin:$PATH"`
 
 ## FFMPEG with Nvidia nvenc
@@ -45,10 +44,11 @@ Install CUDA
 
 **Note: Perhaps static is better to not be affected if libs change/wander about with driver updates?**
 - `./configure  --enable-nonfree --enable-cuda-nvcc --enable-libnpp --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64`
-**Else we can compile with shared libs:**
+
+- **Else we can compile with shared libs:**
 - `./configure --enable-nonfree --enable-cuda-nvcc --enable-libnpp --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64 --disable-static --enable-shared`
 
-- add ffmpeg/ffprobe to PATH, either copy executables to ~/.local/bin or make local bin directory with links:
+- add ffmpeg/ffprobe to PATH, either copy executables to `~/.local/bin` or make local bin directory with links:
   - `mkdir ~/bin && cd bin`
   - `ln -s ~/src/ffmpeg/ffmpeg ffmpeg_gpu`
   - `ln -s ~/src/ffmpeg/ffprobe ffprobe_gpu`
@@ -61,33 +61,38 @@ Install CUDA
 
 # Beholder
 ## Python
-- get Anaconda or miniconda Python
-  - download from https://anaconda.com
-  - `chmod +x <installer-file-name>.sh`
-  - `./<installer-file-name>.sh`
-  - Accept licence and default `$HOME/anaconda3` path
-  - init anaconda (in installer, or via `conda init`)
-  - restart shell, conda base should be active `(base) username@beholder-desktop:~$ `
-  - update conda `conda update -n base -c defaults conda`
+- download Anaconda or miniconda Python from https://anaconda.com
+- `chmod +x <installer-file-name>.sh`
+- `./<installer-file-name>.sh`
+- Accept licence and use default `$HOME/anaconda3` path
+- init anaconda (in installer, or via `conda init`)
+- restart shell, conda base should be active `(base) username@beholder-desktop:~$ `
+- update conda `conda update -n base -c defaults conda`
 
 ## BeholderPi
+Clone the repo
 - `cd ~/src/`
 - `git clone https://github.com/wonkoderverstaendige/BeholderPi`
 - `cd BeholderPi`
+
+Resolving the `requirements.yaml` file will take several minutes!
 - `conda env create -n beholder -f requirements.yaml`
 - `conda activate beholder`
+
+Install the actual beholder package and make launcher scripts accessible
 - `pip install -e .`
 - `cp scripts/launchers/* ~/bin/`
-- check if beholder launches with `beholder`
+
+check if beholder launches with `beholder`
 
 # NTP/Chrony
 - `sudo apt install chrony`
-- `sudo timedatectl set-ntp off`
+- Disable systemd NTP service 
+  - `sudo timedatectl set-ntp off`
 - copy the chrony conf file
   - `mv /etc/chrony/chrony.conf /etc/chrony/chrony.conf.bak` 
   - `cp ~/src/BeholderPi/ansible/templates/beholder/chrony.conf.j2 /etc/chrony/chrony.conf`
 - `sudo systemctl enable --now chrony`
-- check chrony status occasionally
 
 ## Verify NTP synchronization
 - check `chronyc tracking` on beholder

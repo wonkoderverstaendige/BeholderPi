@@ -1,8 +1,5 @@
 ![BeholderPi logo](docs/images/BeholderPiLogo.svg.png "BeholderPI logo")
 
-# BeholderPi
-piEye of the Beholder
-
 # Outline
 
 - scalable array of networked camera nodes
@@ -18,7 +15,7 @@ piEye of the Beholder
 - [RaspberryPi 3B+/4B](https://www.raspberrypi.org/documentation/hardware/raspberrypi/README.md)
 - [Raspberry/Picamera compatible camera module](https://www.raspberrypi.org/documentation/hardware/camera/README.md)
     - e.g. Camera Module v2 (8MP, FOV: 62.2° horizontal, 48.8° vertical)
-    - **Read: ** [How the PiCamera works](https://picamera.readthedocs.io/en/release-1.13/fov.html)
+    - **Read:** [How the PiCamera works](https://picamera.readthedocs.io/en/release-1.13/fov.html)
 - [PoE hat](https://www.raspberrypi.org/products/poe-hat/) for power/network
 - A decent receiving computer (ideally 1 CPU core/node)
 - optional hardware encoding GPU
